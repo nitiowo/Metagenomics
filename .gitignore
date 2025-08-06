@@ -16,3 +16,7 @@
 **/*csv
 **/*tsv
 **/*png
+**/*txt
+**/*html
+**/*log
+**/*json
