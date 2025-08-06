@@ -1,4 +1,4 @@
 # FastQ files #
 ###############
-**/fastq*
-**/fq*
+**/*fastq*
+**/*fq*
