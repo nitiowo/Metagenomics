@@ -1,0 +1,14 @@
+#!/bin/bash
+#$ -M nvincen2@nd.edu
+#$ -m abe
+#$ -q long
+#$ -pe smp 8
+#$ -N QC_all
+
+conda activate fastqc-env
+
+bash fastQC.sh
+
+bash multiqc.sh
+
+conda deactivate
