@@ -1,4 +1,4 @@
-#!/bin/bash --login
+#!/bin/bash
 
-ls -1 ../raw_data/*_R1_*.fastq | sed -E 's/_S[0-9]+_L[0-9]+_R1_001.fastq$//' | sort -u > ../raw_data/samples.txt
-
+cd ../raw_data
+ls -1 *R1*.fastq | sed -E 's/_R1.*$//' | sort -u > samples.txt

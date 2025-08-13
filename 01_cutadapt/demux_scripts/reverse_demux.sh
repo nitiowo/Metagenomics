@@ -1,31 +1,93 @@
-#!/usr/bin/env bash
+#!/usr/bin/env bash --login
 set -euo pipefail
 
 # Usage: reverse_demux.sh <SAMPLE>
 SAMPLE=$1
-PRIMER_REV=primers/reverse_primers.fa
-IN_R1=data/${SAMPLE}_R1.fastq.gz
-IN_R2=data/${SAMPLE}_R2.fastq.gz
-OUTDIR=demux/${SAMPLE}/reverse
-mkdir -p "$OUTDIR"
+PRIMER_REV=../primers/reverse_primers.fa
+IN_R1=../../raw_data/${SAMPLE}_R1_001.fastq
+IN_R2=../../raw_data/${SAMPLE}_R2_001.fastq
+OUTDIR=../demux_out/reverse/${SAMPLE}
+LOGDIR=../demux_out/reverse/logs
+SUMDIR=../demux_out/summaries
 
-# helper to count reads
-count_reads(){ echo $(( $(zcat "$1" | wc -l) / 4 )); }
+mkdir -p "$OUTDIR" "$LOGDIR" "$SUMDIR" 
 
-echo "Processing reverse demux for \$SAMPLE"
+# Helper functions to count reads and calculate average read length
+count_reads(){ echo $(( $(zcat < "$1" | wc -l) / 4 )); }
+avg_len() {
+    zcat < "$1" | awk 'NR % 4 == 2 { total += length($0); count++ }
+                     END { print total / count }'
+}
 
-# run cutadapt, bin by reverse primers
+echo "Processing reverse demux for $SAMPLE"
+
+# Activate cutadapt through conda or module if necessary
+eval "$(conda shell.bash hook)"
+conda activate cutadaptenv
+
+# Run cutadapt, bin by reverse primers
+# Use --action=none if you want to skip the trimming of adapters and only demultiplex
 cutadapt \
-  -G file:"${PRIMER_REV}" \
+  -j 4 \
+  -g file:"${PRIMER_REV}" \
   --pair-filter=any \
   --info-file="${OUTDIR}/rev_info.tsv" \
-  -o "${OUTDIR}/${SAMPLE}_{name}_R1.fastq.gz" \
-  -p "${OUTDIR}/${SAMPLE}_{name}_R2.fastq.gz" \
-  "${IN_R1}" "${IN_R2}" > logs/${SAMPLE}_reverse.log 2>&1
+  -p "${OUTDIR}/${SAMPLE}_{name}_R1.fastq.gz" \
+  -o "${OUTDIR}/${SAMPLE}_{name}_R2.fastq.gz" \
+  "${IN_R2}" "${IN_R1}" > $LOGDIR/${SAMPLE}_reverse.log 2>&1
 
-# count reads
-rev_hco=$(count_reads "${OUTDIR}/HCO2198_R1.fastq.gz"  || echo 0)
-rev_ssu=$(count_reads "${OUTDIR}/SSUR_R1.fastq.gz"     || echo 0)
-rev_unm=$(count_reads "${OUTDIR}/unmatched_R1.fastq.gz" || echo 0)
+### IMPORTANT NOTE!!!!!!
+# During demultiplexing, cutadapt only uses forward primers to decide where each read is written.
+# To 'cheat' this, we switch the positions of the reverse primers, reverse read input, and reverse read output
+# So we 1) change -G to -g, 
+# 2) switch -o and -p
+# 3) switch the orders of the input files so the reverse reads come first.
+# We do NOT do this in steps that use forward primers.
 
-echo -e "${SAMPLE}\t${rev_hco}\t${rev_ssu}\t${rev_unm}" >> summaries/rev_summary.tsv
+# Count reads 
+count_rev_hco_r=$(count_reads "${OUTDIR}/${SAMPLE}_HCO2198_R2.fastq.gz" || echo 0)
+count_rev_ssu_r=$(count_reads "${OUTDIR}/${SAMPLE}_SSUR22_R2.fastq.gz" || echo 0)
+count_rev_unk_r=$(count_reads "${OUTDIR}/${SAMPLE}_unknown_R2.fastq.gz" || echo 0)
+
+count_rev_hco_f=$(count_reads "${OUTDIR}/${SAMPLE}_HCO2198_R1.fastq.gz" || echo 0)
+count_rev_ssu_f=$(count_reads "${OUTDIR}/${SAMPLE}_SSUR22_R1.fastq.gz" || echo 0)
+count_rev_unk_f=$(count_reads "${OUTDIR}/${SAMPLE}_unknown_R1.fastq.gz" || echo 0)
+
+# Calculate average read length
+avglen_rev_hco_r=$(avg_len "${OUTDIR}/${SAMPLE}_HCO2198_R2.fastq.gz" || echo 0)
+avglen_rev_ssu_r=$(avg_len "${OUTDIR}/${SAMPLE}_SSUR22_R2.fastq.gz" || echo 0)
+avglen_rev_unk_r=$(avg_len "${OUTDIR}/${SAMPLE}_unknown_R2.fastq.gz" || echo 0)
+
+avglen_rev_hco_f=$(avg_len "${OUTDIR}/${SAMPLE}_HCO2198_R1.fastq.gz" || echo 0)
+avglen_rev_ssu_f=$(avg_len "${OUTDIR}/${SAMPLE}_SSUR22_R1.fastq.gz" || echo 0)
+avglen_rev_unk_f=$(avg_len "${OUTDIR}/${SAMPLE}_unknown_R1.fastq.gz" || echo 0)
+
+# If forward and reverse counts match, value is YES
+if [[ $count_rev_hco_r == $count_rev_hco_f && \
+  $count_rev_ssu_r == $count_rev_ssu_f && \
+  $count_rev_unk_r == $count_rev_unk_f ]]; then
+  countsMatch="YES"
+else
+  countsMatch="NO"
+fi
+
+# If the rev_count_summary file doesn't exist, create it and add column names.
+if [ ! -f ${SUMDIR}/"rev_count_summary.tsv" ]; then
+  echo -e "Sample\tCount_HCO\tCount_SSU\tCount_unk\tCountsMatch?" >> ${SUMDIR}/rev_count_summary.tsv
+fi
+
+# Add summary count into the rev_count_summary file
+echo -e "${SAMPLE}\t${count_rev_hco_r}\t${count_rev_ssu_r}\t${count_rev_unk_r}\t${countsMatch}" >> ${SUMDIR}/rev_count_summary.tsv
+
+
+# If the rev_readLen_summary file doesn't exist, create it and add column names.
+if [ ! -f ${SUMDIR}/"rev_readLen_summary.tsv" ]; then
+  echo -e "Sample\treadLen_HCO_R\treadLen_HCO_F \
+  \treadLen_SSU_R\treadLen_SSU_F \
+  \treadLen_unk_R\treadLen_unk_F" >> ${SUMDIR}/rev_readLen_summary.tsv
+fi
+
+# Add summary read lengths into the rev_readLen_summary file
+echo -e "${SAMPLE}\t${avglen_rev_hco_r}\t${avglen_rev_hco_f} \
+\t${avglen_rev_ssu_r}\t${avglen_rev_ssu_f} \
+\t${avglen_rev_unk_r}\t${avglen_rev_unk_f}" >> ${SUMDIR}/rev_readLen_summary.tsv
