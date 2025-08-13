@@ -1,19 +1,19 @@
 #!/usr/bin/env bash --login
-set -euo pipefail
+set -euo pipefail # Kills script in case of command failure
 
-# Usage: reverse_demux.sh <SAMPLE>
+# Usage: 01a_reverse_demux.sh <SAMPLE>
 SAMPLE=$1
 PRIMER_REV=../primers/reverse_primers.fa
 IN_R1=../../raw_data/${SAMPLE}_R1_001.fastq.gz
 IN_R2=../../raw_data/${SAMPLE}_R2_001.fastq.gz
-OUTDIR=../demux_out/01a_reverse
-HCODIR=../demux_out/01a_reverse/HCO2198
-SSUDIR=../demux_out/01a_reverse/SSUR22
-UNKDIR=../demux_out/01a_reverse/unknown
-LOGDIR=../demux_out/01a_reverse/logs
+OUTDIR=../demux_out/01a_reverse/${SAMPLE}
+HCODIR=../demux_out/01a_reverse/${SAMPLE}/HCO2198
+SSUDIR=../demux_out/01a_reverse/${SAMPLE}/SSUR22
+UNKDIR=../demux_out/01a_reverse/${SAMPLE}/unknown
+LOGDIR=../demux_out/summaries/rev_logs
 SUMDIR=../demux_out/summaries
 
-mkdir -p "$OUTDIR" "$HCODIR" "$SSUDIR" "$UNKDIR" "$LOGDIR" "$SUMDIR" 
+mkdir -p "$OUTDIR" "$LOGDIR" "$SUMDIR" "$HCODIR" "$SSUDIR" "$UNKDIR"
 
 # Helper functions to count reads and calculate average read length
 count_reads(){ echo $(( $(zcat < "$1" | wc -l) / 4 )); } # Opens file, counts lines, divides by 4
