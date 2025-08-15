@@ -3,6 +3,8 @@ set -euo pipefail # Kills script in case of command failure
 
 # Usage: 01a_reverse_demux.sh <SAMPLE>
 
+# ==================== SETUP =========================
+
 SAMPLE=$1
 
 # Reverse primer fasta
@@ -23,16 +25,21 @@ OUTDIR=../demux_out/01a_reverse/${SAMPLE}
 HCODIR=../demux_out/01a_reverse/${SAMPLE}/HCO2198
 SSUDIR=../demux_out/01a_reverse/${SAMPLE}/SSUR22
 UNKDIR=../demux_out/01a_reverse/${SAMPLE}/unknown
-MANDIR=../demux_out/summaries/manifests
-LOGDIR=../demux_out/summaries/CA_logs
+MANDIR=../demux_out/01a_reverse/summaries/manifests
+LOGDIR=../demux_out/01a_reverse/summaries/CA_logs
+SUMDIR=../demux_out/01a_reverse/summaries/summary_data
 
-mkdir -p "$OUTDIR" "$MANDIR" "$LOGDIR" "$HCODIR" "$SSUDIR" "$UNKDIR"
-
-echo "Processing reverse demux for $SAMPLE"
+mkdir -p "$OUTDIR" "$MANDIR" "$LOGDIR" "$SUMDIR" \
+"$HCODIR" "$SSUDIR" "$UNKDIR"
 
 # Activate cutadapt through conda or module if necessary
 eval "$(conda shell.bash hook)"
 conda activate cutadaptenv
+
+
+# ====================== CUTADAPT ===========================
+
+echo "Processing reverse demux for $SAMPLE"
 
 # Run cutadapt, bin by reverse primers
 # Use --action=none if you want to skip the trimming of adapters and only demultiplex
@@ -60,19 +67,31 @@ mv ${OUTDIR}/*HCO*.* $HCODIR
 mv ${OUTDIR}/*SSU*.* $SSUDIR
 mv ${OUTDIR}/*unk*.* $UNKDIR
 
+
+# ====================== CREATING MANIFEST AND SUMMARY FILES ===========================
+
+echo "Creating manifest and summary files for $SAMPLE"
+
 # Write output manifest lines to file
-outMan="${MANDIR}/${SAMPLE}_rev_out_man.tsv"
-man_header="sample"$'\t'"reverse_bin"$'\t'"file_R1"$'\t'"file_R2"$'\t'"CA_exit_status"    # Create header line
+outMan="${MANDIR}/${SAMPLE}_rev_out_man.csv"
+
+# Creating header
+man_header="sample,reverse_bin,out_R1_path,out_R2_path,CA_exit_status"
 printf "%s\n" "$man_header" > "$outMan"
 
+# Adding line for raw files
+abs_raw_R1=$(realpath ${IN_R1})
+abs_raw_R2=$(realpath ${IN_R2})
+rawline="${SAMPLE},raw,${abs_raw_R1},${abs_raw_R2},$status"
+printf "%s\n" "$rawline" >> "$outMan"
+
 # Build each line by adding values to each column in primer order
-line="$SAMPLE"                            # Value in first column
 for primer in "${PRIMERS[@]}"; do       # For each primer:
   line="$SAMPLE"
   r1_out_path=$(realpath ${OUTDIR}/${primer}/*R1.*)
   r2_out_path=$(realpath ${OUTDIR}/${primer}/*R2.*)
-  line+=$'\t'"${primer}"$'\t'"${r1_out_path}"$'\t'"${r2_out_path}"$'\t'"$status"  # Add count to the line (tab separated)
+  line+=",${primer},${r1_out_path},${r2_out_path},$status"
   printf "%s\n" "$line" >> "$outMan"
 done
 
-# Rscript reverse_summary.R
+# Rscript reverse_summary.R $outMan $SUMDIR
