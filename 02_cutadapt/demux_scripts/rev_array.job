@@ -1,0 +1,27 @@
+#!/bin/bash
+set -euo pipefail
+#$ -N demux_reverse
+#$ -t 1-6          # adjust to your sample count
+#$ -tc 6           # run max 12 tasks concurrently
+#$ -cwd
+#$ -pe smp 4        # 4 cores per task
+#$ -o logs/
+#$ -e logs/
+#$ -q largemem
+#$ -M nvincen2@nd.edu
+#$ -m abe
+
+
+# read sample name for this task
+SAMPLE=$(sed -n "${SGE_TASK_ID}p" samples.txt || true)
+
+# basic sanity check
+if [ -z "${SAMPLE}" ]; then
+  echo "ERROR: No sample found for SGE_TASK_ID=${SGE_TASK_ID} (check samples.txt)" >&2
+  exit 2
+fi
+
+echo "=== Starting pipeline for ${SAMPLE} ==="
+
+# Step 1: reverse demux
+bash ./01a_reverse_demux.sh "${SAMPLE}"
