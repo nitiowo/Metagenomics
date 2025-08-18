@@ -8,7 +8,7 @@
 # R files #
 ###########
 **/*Rds
-
+**/*Rhistory
 
 # Output files #
 ################
