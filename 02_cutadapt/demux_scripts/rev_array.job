@@ -23,8 +23,8 @@ if [ -z "${SAMPLE}" ]; then
 fi
 
 # --- Redirect stdout/stderr to sample-specific files ---
-exec > logs/joblog_rev_${SAMPLE}.out
-exec 2> logs/joblog_rev_${SAMPLE}.err
+exec > job_logs/joblog_rev_${SAMPLE}.out
+exec 2> job_logs/joblog_rev_${SAMPLE}.err
 
 echo "=== Starting pipeline for ${SAMPLE} ==="
 

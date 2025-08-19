@@ -1,6 +1,6 @@
 #!/bin/bash
 set -euo pipefail
-#$ -N demux_forward
+#$ -N joblog_demux_forward
 #$ -t 1-18          # adjust to your sample count
 #$ -tc 6           # run max 6 tasks concurrently
 #$ -cwd
@@ -12,6 +12,8 @@ set -euo pipefail
 #$ -m n
 
 mkdir -p job_logs/
+
+module load bio/0724
 
 MANIFEST="../demux_out/01a_reverse/summaries/fwd_input_manifest.csv"
 
@@ -29,8 +31,8 @@ SAMPLE=$(echo "$LINE" | cut -f1 -d ',')
 REVBIN=$(echo "$LINE" | cut -f2 -d ',')
 
 # --- Redirect stdout/stderr to sample-specific files ---
-exec > logs/joblog_fwd_${SAMPLE}_${REVBIN}.out
-exec 2> logs/joblog_fwd_${SAMPLE}_${REVBIN}.err
+exec > job_logs/joblog_fwd_${SAMPLE}_${REVBIN}.out
+exec 2> job_logs/joblog_fwd_${SAMPLE}_${REVBIN}.err
 
 echo "=== Starting pipeline for ${SAMPLE} ${REVBIN} ==="
 
