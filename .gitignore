@@ -20,3 +20,7 @@
 **/*html
 **/*log
 **/*json
+
+# Job logs #
+############
+**/*joblog*
