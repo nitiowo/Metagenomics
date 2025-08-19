@@ -2,24 +2,28 @@
 set -euo pipefail
 #$ -N demux_reverse
 #$ -t 1-6          # adjust to your sample count
-#$ -tc 6           # run max 12 tasks concurrently
+#$ -tc 6           # run max 6 tasks concurrently
 #$ -cwd
 #$ -pe smp 4        # 4 cores per task
 #$ -o logs/
 #$ -e logs/
 #$ -q largemem
 #$ -M nvincen2@nd.edu
-#$ -m abe
+#$ -m n
 
 
-# read sample name for this task
+# Read sample name for this task
 SAMPLE=$(sed -n "${SGE_TASK_ID}p" samples.txt || true)
 
-# basic sanity check
+# Basic sanity check
 if [ -z "${SAMPLE}" ]; then
   echo "ERROR: No sample found for SGE_TASK_ID=${SGE_TASK_ID} (check samples.txt)" >&2
   exit 2
 fi
+
+# --- Redirect stdout/stderr to sample-specific files ---
+exec > logs/joblog_rev_${SAMPLE}.out
+exec 2> logs/joblog_rev_${SAMPLE}.err
 
 echo "=== Starting pipeline for ${SAMPLE} ==="
 

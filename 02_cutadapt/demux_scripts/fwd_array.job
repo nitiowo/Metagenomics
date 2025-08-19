@@ -1,0 +1,38 @@
+#!/bin/bash
+set -euo pipefail
+#$ -N demux_forward
+#$ -t 1-18          # adjust to your sample count
+#$ -tc 6           # run max 6 tasks concurrently
+#$ -cwd
+#$ -pe smp 4        # 4 cores per task
+#$ -o logs/
+#$ -e logs/
+#$ -q largemem
+#$ -M nvincen2@nd.edu
+#$ -m n
+
+mkdir -p logs/
+
+MANIFEST="../demux_out/01a_reverse/summaries/fwd_input_manifest.csv"
+
+# Read sample name for this task
+LINE=$(tail -n +2 "$MANIFEST" | sed -n "${SGE_TASK_ID}p")
+
+# Basic sanity check
+if [ -z "${LINE}" ]; then
+  echo "ERROR: No sample found for SGE_TASK_ID=${SGE_TASK_ID} (check fwd_input_manifest.csv)" >&2
+  exit 2
+fi
+
+# Parse fields (comma separated)
+SAMPLE=$(echo "$LINE" | cut -f1 -d ',')
+REVBIN=$(echo "$LINE" | cut -f2 -d ',')
+
+# --- Redirect stdout/stderr to sample-specific files ---
+exec > logs/joblog_fwd_${SAMPLE}_${REVBIN}.out
+exec 2> logs/joblog_fwd_${SAMPLE}_${REVBIN}.err
+
+echo "=== Starting pipeline for ${SAMPLE} ${REVBIN} ==="
+
+# Step 2: Forward demux
+bash ./01b_forward_demux.sh ${SAMPLE} ${REVBIN}
