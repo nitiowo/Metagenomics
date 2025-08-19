@@ -1,0 +1,5 @@
+- Move summarizer functionality to python script
+- Allow initial script to call data from outside of repo
+- Change reverse unknowns to unknownr and forwards to unknownf
+- Remove primer hardcoding
+- Make big master jobsub script
