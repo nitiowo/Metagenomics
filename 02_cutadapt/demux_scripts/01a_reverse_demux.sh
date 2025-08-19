@@ -119,8 +119,6 @@ printf "%s\n" "$raw_sumLine" >> "$outSum"
 count_rev_total_r=0
 count_rev_total_f=0
 
-last=$(( ${#PRIMERS[@]} - 1 ))
-
 # Build each line by adding values to each column in primer order
 for primer in "${PRIMERS[@]}"; do       # For each primer:
 
