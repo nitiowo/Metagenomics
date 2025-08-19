@@ -5,15 +5,16 @@ set -euo pipefail
 #$ -tc 6           # run max 6 tasks concurrently
 #$ -cwd
 #$ -pe smp 4        # 4 cores per task
-#$ -o logs/
-#$ -e logs/
+#$ -o job_logs/
+#$ -e job_logs/
 #$ -q largemem
 #$ -M nvincen2@nd.edu
 #$ -m n
 
+mkdir -p job_logs/
 
 # Read sample name for this task
-SAMPLE=$(sed -n "${SGE_TASK_ID}p" samples.txt || true)
+SAMPLE=$(sed -n "${SGE_TASK_ID}p" ../../00_prep/samples.txt || true)
 
 # Basic sanity check
 if [ -z "${SAMPLE}" ]; then
