@@ -1,6 +1,6 @@
 #!/bin/bash
 set -euo pipefail
-#$ -N demux_forward
+#$ -N joblog_demux_forward
 #$ -t 1-18          # adjust to your sample count
 #$ -tc 6           # run max 6 tasks concurrently
 #$ -cwd
@@ -12,6 +12,8 @@ set -euo pipefail
 #$ -m n
 
 mkdir -p job_logs/
+
+module load bio/0724
 
 MANIFEST="../demux_out/01a_reverse/summaries/fwd_input_manifest.csv"
 
