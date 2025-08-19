@@ -7,6 +7,9 @@ set -euo pipefail # Kills script in case of command failure
 
 SAMPLE=$1
 
+# Raw data
+RAW_DIR=$(cat ../../00_prep/raw_dir.txt)
+
 # Reverse primer fasta
 PRIMER_REV=../primers/reverse_primers.fa
 
@@ -17,8 +20,8 @@ mapfile -t PRIMERS < <(grep '^>' "$PRIMER_REV" | sed 's/^>//' | tr -d '\r')
 PRIMERS+=("unknown")
 
 # Input directories
-IN_R1=../../raw_data/${SAMPLE}_R1_001.fastq.gz
-IN_R2=../../raw_data/${SAMPLE}_R2_001.fastq.gz
+IN_R1=${RAW_DIR}/${SAMPLE}_R1_001.fastq.gz
+IN_R2=${RAW_DIR}/${SAMPLE}_R2_001.fastq.gz
 
 # Output directories
 OUTDIR=../demux_out/01a_reverse/${SAMPLE}

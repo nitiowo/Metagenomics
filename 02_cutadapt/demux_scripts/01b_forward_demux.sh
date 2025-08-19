@@ -61,7 +61,7 @@ status=$? # Cutadapt exit status
 # Move output files to corresponding fwd marker subdirectory
 mv ${OUT_FWD_DIR}/*LCO*.* $LCODIR
 mv ${OUT_FWD_DIR}/*mICO*.* $MCODIR
-mv ${OUT_FWD_DIR}/*SSU*.* $SSUDIR
+mv ${OUT_FWD_DIR}/*SSUR*.* $SSUDIR
 mv ${OUT_FWD_DIR}/*unk*.* $UNKDIR
 
 
@@ -79,8 +79,10 @@ avg_len() {
 # Incrementally sums length of line, incrementally counts number of lines processed, calculates average
 
 # Get raw files
-Raw_R1=../../raw_data/${SAMPLE}_R1_001.fastq.gz
-Raw_R2=../../raw_data/${SAMPLE}_R2_001.fastq.gz
+RAW_DIR=$(cat ../../00_prep/raw_dir.txt)
+
+Raw_R1=${RAW_DIR}/${SAMPLE}_R1_001.fastq.gz
+Raw_R2=${RAW_DIR}/${SAMPLE}_R2_001.fastq.gz
 
 # Setting manifest and summary files
 outMan="${MANDIR}/${COMBO}_fwd_out_man.csv"
