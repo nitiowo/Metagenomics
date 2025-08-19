@@ -1,8 +1,8 @@
 #!/bin/bash
 set -euo pipefail
 #$ -N joblog_demux_forward
-#$ -t 1-18          # adjust to your sample count
-#$ -tc 6           # run max 6 tasks concurrently
+#$ -t 1-288          # adjust to your sample count
+#$ -tc 12           # run max 6 tasks concurrently
 #$ -cwd
 #$ -pe smp 4        # 4 cores per task
 #$ -o job_logs/

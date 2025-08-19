@@ -41,10 +41,6 @@ mkdir -p "$OUT_FWD_DIR" "$SUMDIR" "$LOGDIR" "$MANDIR" \
 
 echo "Processing forward demux for $SAMPLE"
 
-# Activate cutadapt through conda or module if necessary
-# eval "$(conda shell.bash hook)"
-# conda activate cutadaptenv
-
 # Run cutadapt, bin by reverse primers
 # Use --action=none if you want to skip the trimming of adapters and only demultiplex
 cutadapt \
@@ -61,7 +57,7 @@ status=$? # Cutadapt exit status
 # Move output files to corresponding fwd marker subdirectory
 mv ${OUT_FWD_DIR}/*LCO*.* $LCODIR
 mv ${OUT_FWD_DIR}/*mICO*.* $MCODIR
-mv ${OUT_FWD_DIR}/*SSUR*.* $SSUDIR
+mv ${OUT_FWD_DIR}/*SSUF*.* $SSUDIR
 mv ${OUT_FWD_DIR}/*unk*.* $UNKDIR
 
 
