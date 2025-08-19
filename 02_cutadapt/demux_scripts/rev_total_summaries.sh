@@ -4,8 +4,8 @@
 
 PRIMER_REV=../primers/reverse_primers.fa
 
-TOTAL_MAN=../demux_out/01a_reverse/summaries/total_manifest.csv
-TOTAL_SUM=../demux_out/01a_reverse/summaries/total_summary.csv
+TOTAL_MAN=../demux_out/01a_reverse/summaries/total_rev_out_manifest.csv
+TOTAL_SUM=../demux_out/01a_reverse/summaries/total_rev_out_summary.csv
 
 # Extract primer names from fasta file
 mapfile -t PRIMERS < <(grep '^>' "$PRIMER_REV" | sed 's/^>//' | tr -d '\r')

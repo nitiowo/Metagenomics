@@ -3,3 +3,4 @@
 - Change reverse unknowns to unknownr and forwards to unknownf
 - Remove primer hardcoding
 - Make big master jobsub script
+- Combine forward and reverse total summary scripts

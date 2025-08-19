@@ -4,8 +4,8 @@
 
 PRIMER_FWD=../primers/fwd_primers.fa
 
-TOTAL_MAN=../demux_out/01b_forward/summaries/total_manifest.csv
-TOTAL_SUM=../demux_out/01b_forward/summaries/total_summary.csv
+TOTAL_MAN=../demux_out/01b_forward/summaries/total_fwd_out_manifest.csv
+TOTAL_SUM=../demux_out/01b_forward/summaries/total_fwd_out_summary.csv
 
 # Extract primer names from fasta file
 mapfile -t PRIMERS < <(grep '^>' "$PRIMER_FWD" | sed 's/^>//' | tr -d '\r')
@@ -14,13 +14,13 @@ PRIMERS+=("unknown")
 
 # Getting primer info
 num_prim=${#PRIMERS[@]}    # Number of primers
-num_lines=$((num_prim + 1))  # Number of lines to extract (no. of primers + raw)
+num_lines=$((num_prim + 1))  # Number of lines to extract (no. of primers + reverse parent) (raw line added with header)
 
 # Setting up manifest file
-man_dir=../demux_out/01a_reverse/summaries/manifests/
-man_files=../demux_out/01a_reverse/summaries/manifests/*
+man_dir=../demux_out/01b_forward/summaries/manifests/
+man_files=../demux_out/01b_forward/summaries/manifests/*
 first_man=$(ls "$man_dir" | head -n 1)    # Grabs first file in directory
-head -n 1 "$man_dir/$first_man" > "$TOTAL_MAN"   # Grabs first line from that file (header line)
+head -n 2 "$man_dir/$first_man" > "$TOTAL_MAN"   # Grabs first two lines from that file (header line + raw info)
 
 # Collating all manifest files together
 echo "Creating total manifest"
@@ -29,11 +29,11 @@ for file in ${man_files[@]}; do
 done
 
 # Creating manifest without raw info for forward array input
-awk -F',' '$2 != "raw"' ${TOTAL_MAN} > ../demux_out/01a_reverse/summaries/fwd_input_manifest.csv
+awk -F',' '$2 !~ /raw/ && $2 !~ /parent/' "${TOTAL_MAN}" > ../demux_out/01b_forward/summaries/total_fwd_noRawParent_manifest.csv
 
 # Setting up summary file
-sum_dir=../demux_out/01a_reverse/summaries/summary_data/
-sum_files=../demux_out/01a_reverse/summaries/summary_data/*
+sum_dir=../demux_out/01b_forward/summaries/summary_data/
+sum_files=../demux_out/01b_forward/summaries/summary_data/*
 first_sum=$(ls "$sum_dir" | head -n 1)
 head -n 1 "$sum_dir/$first_sum" > "$TOTAL_SUM"
 
