@@ -6,5 +6,8 @@
 
 RAW_DIR=$(cat raw_dir.txt)
 
-cd $RAW_DIR
-ls -1 *R1*.fastq.gz | sed -E 's/_R1.*$//' | sort -u > ../00_prep/samples.txt
+ls -1 "$RAW_DIR"/*R1*.fastq.gz \
+  | xargs -n1 basename \
+  | sed -E 's/_R1.*$//' \
+  | sort -u \
+ > ./samples.txt
