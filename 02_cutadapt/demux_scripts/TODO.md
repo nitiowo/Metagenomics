@@ -4,3 +4,4 @@
 - Remove primer hardcoding
 - Make big master jobsub script
 - Combine forward and reverse total summary scripts
+	- Swap to awk strategy

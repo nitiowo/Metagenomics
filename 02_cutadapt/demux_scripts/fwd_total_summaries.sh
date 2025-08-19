@@ -2,8 +2,12 @@
 
 # Usage: bash total_summaries.sh
 
+# Input directories
 PRIMER_FWD=../primers/fwd_primers.fa
+man_dir=../demux_out/01b_forward/summaries/manifests/
+sum_dir=../demux_out/01b_forward/summaries/summary_data/
 
+# Output files
 TOTAL_MAN=../demux_out/01b_forward/summaries/total_fwd_out_manifest.csv
 TOTAL_SUM=../demux_out/01b_forward/summaries/total_fwd_out_summary.csv
 
@@ -16,29 +20,25 @@ PRIMERS+=("unknown")
 num_prim=${#PRIMERS[@]}    # Number of primers
 num_lines=$((num_prim + 1))  # Number of lines to extract (no. of primers + reverse parent) (raw line added with header)
 
-# Setting up manifest file
-man_dir=../demux_out/01b_forward/summaries/manifests/
-man_files=../demux_out/01b_forward/summaries/manifests/*
-first_man=$(ls "$man_dir" | head -n 1)    # Grabs first file in directory
-head -n 2 "$man_dir/$first_man" > "$TOTAL_MAN"   # Grabs first two lines from that file (header line + raw info)
-
-# Collating all manifest files together
-echo "Creating total manifest"
-for file in ${man_files[@]}; do
-	tail -n $num_lines $file >> $TOTAL_MAN  # Grabs last n lines from manifest file (n = number of bins)
-done
+# Comma-separated manifests; prints header once and only the first 'raw' line per sample
+# Print header once
+# Print raw only the first time per sample
+# Otherwise print line
+awk -F',' '
+  FNR==1 && NR==1 { print; next }
+  FNR==1 { next }                
+  $2=="raw" { 
+  	if (!seen[$1]++) print; next }      
+  { print }                                       
+' "$man_dir"/* > ${TOTAL_MAN}
 
 # Creating manifest without raw info for forward array input
 awk -F',' '$2 !~ /raw/ && $2 !~ /parent/' "${TOTAL_MAN}" > ../demux_out/01b_forward/summaries/total_fwd_noRawParent_manifest.csv
 
-# Setting up summary file
-sum_dir=../demux_out/01b_forward/summaries/summary_data/
-sum_files=../demux_out/01b_forward/summaries/summary_data/*
-first_sum=$(ls "$sum_dir" | head -n 1)
-head -n 1 "$sum_dir/$first_sum" > "$TOTAL_SUM"
-
-# Collating all summary files together
-echo "Creating total summary"
-for file in ${sum_files[@]}; do
-	tail -n $num_lines $file >> $TOTAL_SUM
-done
+# Summary file
+awk -F',' '
+  FNR==1 && NR==1 { print; next }  
+  FNR==1 { next }                
+  $2=="raw" { if (!seen[$1]++) print; next }      
+  { print }                                       
+' "$sum_dir"/* > ${TOTAL_SUM}
