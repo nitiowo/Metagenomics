@@ -29,8 +29,8 @@ SAMPLE=$(echo "$LINE" | cut -f1 -d ',')
 REVBIN=$(echo "$LINE" | cut -f2 -d ',')
 
 # --- Redirect stdout/stderr to sample-specific files ---
-exec > logs/joblog_fwd_${SAMPLE}_${REVBIN}.out
-exec 2> logs/joblog_fwd_${SAMPLE}_${REVBIN}.err
+exec > job_logs/joblog_fwd_${SAMPLE}_${REVBIN}.out
+exec 2> job_logs/joblog_fwd_${SAMPLE}_${REVBIN}.err
 
 echo "=== Starting pipeline for ${SAMPLE} ${REVBIN} ==="
 
