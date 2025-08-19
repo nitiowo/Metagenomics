@@ -61,7 +61,7 @@ status=$? # Cutadapt exit status
 # Move output files to corresponding fwd marker subdirectory
 mv ${OUT_FWD_DIR}/*LCO*.* $LCODIR
 mv ${OUT_FWD_DIR}/*mICO*.* $MCODIR
-mv ${OUT_FWD_DIR}/*SSUR*.* $SSUDIR
+mv ${OUT_FWD_DIR}/*SSUF*.* $SSUDIR
 mv ${OUT_FWD_DIR}/*unk*.* $UNKDIR
 
 
