@@ -35,11 +35,6 @@ SUMDIR=../demux_out/01a_reverse/summaries/summary_data
 mkdir -p "$OUTDIR" "$MANDIR" "$LOGDIR" "$SUMDIR" \
 "$HCODIR" "$SSUDIR" "$UNKDIR"
 
-# Activate cutadapt through conda or module if necessary
-eval "$(conda shell.bash hook)"
-conda activate cutadaptenv
-
-
 # ====================== CUTADAPT ===========================
 
 echo "Processing reverse demux for $SAMPLE"

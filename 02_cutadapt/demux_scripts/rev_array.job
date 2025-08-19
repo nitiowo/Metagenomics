@@ -1,8 +1,8 @@
 #!/bin/bash
 set -euo pipefail
-#$ -N demux_reverse
-#$ -t 1-6          # adjust to your sample count
-#$ -tc 6           # run max 6 tasks concurrently
+#$ -N joblog_demux_reverse
+#$ -t 1-96          # adjust to your sample count
+#$ -tc 12           # run max 6 tasks concurrently
 #$ -cwd
 #$ -pe smp 4        # 4 cores per task
 #$ -o job_logs/
@@ -12,6 +12,8 @@ set -euo pipefail
 #$ -m n
 
 mkdir -p job_logs/
+
+module load bio/0724
 
 # Read sample name for this task
 SAMPLE=$(sed -n "${SGE_TASK_ID}p" ../../00_prep/samples.txt || true)
