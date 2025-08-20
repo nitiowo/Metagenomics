@@ -5,3 +5,5 @@
 - Make big master jobsub script
 - Combine forward and reverse total summary scripts
 	- Swap to awk strategy
+- Fix directory and script names (numbering system?)
+- Delete combination pathlist files after concatenation

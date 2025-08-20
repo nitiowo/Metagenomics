@@ -1,0 +1,32 @@
+#!/bin/bash
+set -euo pipefail
+#$ -N joblog_cat
+#$ -cwd
+#$ -pe smp 1 
+#$ -o job_logs/
+#$ -e job_logs/
+#$ -q largemem
+#$ -M nvincen2@nd.edu
+#$ -m abe
+
+module load R
+
+sumdir=""
+mandir=""
+outdir=""
+
+lcodir=${outdir}/LCO1490
+micodir=${outdir}/mICOintF
+ssudir=${outdir}/SSUF04
+
+mkdir -p $lcodir
+mkdir -p $micodir
+mkdir -p $ssudir
+
+Rscript make_cat_script.R $sumdir $mandir
+
+bash rescue_add.sh $outdir
+
+mv ${outdir}/*LCO* $lcodir
+mv ${outdir}/*mICO* $micodir
+mv ${outdir}/*SSU* $ssudir
