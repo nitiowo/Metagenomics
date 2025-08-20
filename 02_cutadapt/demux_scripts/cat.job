@@ -11,9 +11,8 @@ set -euo pipefail
 
 module load R
 
-sumdir=""
-mandir=""
-outdir=""
+mandir="../demux_out/01b_forward/summaries/total_fwd_out_manifest.csv"
+outdir="../demux_out/01c_rescue"
 
 lcodir=${outdir}/LCO1490
 micodir=${outdir}/mICOintF
@@ -23,10 +22,13 @@ mkdir -p $lcodir
 mkdir -p $micodir
 mkdir -p $ssudir
 
-Rscript make_cat_script.R $sumdir $mandir
+# Run script that makes rescue_add.sh
+Rscript make_cat_script.R $mandir
 
+# Run rescue_add.sh - outputs go to outdir
 bash rescue_add.sh $outdir
 
+# Move outputs into their own folders based on forward primer
 mv ${outdir}/*LCO* $lcodir
 mv ${outdir}/*mICO* $micodir
 mv ${outdir}/*SSU* $ssudir
