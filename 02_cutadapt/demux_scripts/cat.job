@@ -29,6 +29,6 @@ Rscript make_cat_script.R $mandir
 bash rescue_add.sh $outdir
 
 # Move outputs into their own folders based on forward primer
-mv ${outdir}/*LCO* $lcodir
-mv ${outdir}/*mICO* $micodir
-mv ${outdir}/*SSU* $ssudir
+mv ${outdir}/*LCO*gz $lcodir
+mv ${outdir}/*mICO*gz $micodir
+mv ${outdir}/*SSU*gz $ssudir
