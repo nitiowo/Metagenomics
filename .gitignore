@@ -1,6 +1,7 @@
 # FastQ files #
 ###############
-**/*fastq*
+**/*fastq
+**/*fastq.gz
 **/*fq*
 **/*fa
 
