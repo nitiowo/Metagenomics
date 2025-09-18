@@ -21,6 +21,7 @@
 **/*html
 **/*log
 **/*json
+**/*fastqc.zip
 
 # Job logs #
 ############
