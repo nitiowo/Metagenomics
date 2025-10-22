@@ -9,7 +9,10 @@
 # R files #
 ###########
 **/*Rds
+**/*rds
+**/*RDS
 **/*Rhistory
+**/*RData
 
 # Output files #
 ################
