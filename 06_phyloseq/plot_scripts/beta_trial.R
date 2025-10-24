@@ -21,7 +21,7 @@ library(hash)
 library(RColorBrewer)
 
 setwd('/Volumes/Samsung_1TB/Zooplankton/')
-outdir <- "/Volumes/Samsung_1TB/Zooplankton/Metagenomics/06_phyloseq/plots/alpha_diversity/"
+outdir <- "/Volumes/Samsung_1TB/Zooplankton/Metagenomics/06_phyloseq/plots/beta_diversity_function_test/"
 
 ####################################################################
 
@@ -124,19 +124,19 @@ saveRDS(ps, file = paste0("/Volumes/Samsung_1TB/Zooplankton/Metagenomics/06_phyl
 
 ####################################################################
 
-orig_ps <- readRDS("/Volumes/Samsung_1TB/Zooplankton/Metagenomics/06_phyloseq/ps_objects/Leray_dadaOriginal.RDS")
+orig_ps <- readRDS("/Volumes/Samsung_1TB/Zooplankton/Metagenomics/06_phyloseq/ps_objects/morph_ps_integer.RDS")
 ps <- orig_ps
 
 outdir <- "/Volumes/Samsung_1TB/Zooplankton/Metagenomics/06_phyloseq/plots/beta_diversity_function_test/"
 
-marker <- "Leray" # Only works with no slash at the end
+marker <- "Morphological" # Only works with no slash at the end
 markerdir <- paste0(outdir, marker)
 dir.create(markerdir, recursive = TRUE)
 
 
 random_tree <- rtree(ntaxa(orig_ps), rooted=TRUE, 
                      tip.label=taxa_names(orig_ps))
-ps2 <- merge_phyloseq(orig_ps, random_tree) # Add tree to ps object
+ps <- merge_phyloseq(orig_ps, random_tree) # Add tree to ps object
 
 
 ####################################################################
@@ -152,6 +152,12 @@ ord_plot <- function(ps, ord_methods, distance_metrics, group_variables,
     for(dist in distance_metrics){
       for(group_var in group_variables){
         
+        if(group_var == "Morph_avail" && grepl("Benthic", tax_subset)){
+          next
+        } else if (marker == "Morphological" && group_var != "Lake"){
+          next
+        }
+        
         print(paste("Plotting", meth, dist, group_var, sep = " "))
         
         outfilepath <- paste0(marker_outdir, "/", level, "/", tax_subset, "/")
@@ -164,27 +170,27 @@ ord_plot <- function(ps, ord_methods, distance_metrics, group_variables,
           # Jaccard uses only presence/absence data (not abundances). 
           # Transformation to binary not strictly necessary (ordinate function natively uses only binary data for Jaccard)
           ps <- transform_sample_counts(ps, function(x) ifelse(x > 0, 1L, 0L))
-          ord.nmds <- ordinate(ps, method=meth, distance="jaccard")
+          ord <- ordinate(ps, method=meth, distance="jaccard")
         } else if(dist == "bray"){
           # Transform data to relative abundance as appropriate for Bray-Curtis distances
           # See for info: https://jkzorz.github.io/2019/06/06/NMDS.html
           ps <- transform_sample_counts(ps, function(otu) otu/sum(otu))
-          ord.nmds <- ordinate(ps, method=meth, distance="bray")  
+          ord <- ordinate(ps, method=meth, distance="bray")  
         }
         
-        # Plot NMDS
-        nmds.p <- plot_ordination(ps, ord.nmds, color=group_var) + 
+        # Plot Ordination
+        ord.p <- plot_ordination(ps, ord, color=group_var) + 
           stat_ellipse(aes(group=.data[[group_var]])) +
           geom_text(aes(label=sample_names(ps), hjust=0.3, vjust=-0.4), size = 3) +
           ggtitle(paste0(marker, " - ", dist, " ", meth, " ordination by ", 
                          group_var," - ", level, " - ", tax_subset))
         
         # Show plot
-        nmds.p
+        ord.p
         
         # Save plot
         ggsave(filename = paste0(outfilename, "_", dist,"_", meth, "_by", group_var,".png"),
-               plot = last_plot(), width = 1000, height = 800, device = png, 
+               plot = ord.p, width = 1000, height = 800, device = png, 
                units = "px", scale = 3)
         
       }
@@ -193,14 +199,14 @@ ord_plot <- function(ps, ord_methods, distance_metrics, group_variables,
 }
 
 
-dists <- c("jaccard", "bray")
+dists <- c("bray", "jaccard")
 groupsy <- c("Lake", "Mesh")
 ords <- c("PCoA", "NMDS")
-level <- "ASV"
+level <- "Species"
 tax_subset <- "unfiltered"
 
 ord_plot(ps, ords, dists, groupsy, 
-         marker_outdir, marker, level, tax_subset)
+         markerdir, marker, level, tax_subset)
 
 
 ####################################################################
@@ -215,6 +221,12 @@ heat_plot <- function(ps, distance_metrics, group_variables,
     for(dist in distance_metrics){
       for(group_var in group_variables){
         
+        if(group_var == "Morph_avail" && grepl("Benthic", tax_subset)){
+          next
+        } else if (marker == "Morphological" && group_var != "Lake"){
+          next
+        }
+        
         print(paste("Plotting heatmap", dist, group_var, sep = " "))
         
         outfilepath <- paste0(marker_outdir, "/", level, "/", tax_subset, "/")
@@ -223,28 +235,34 @@ heat_plot <- function(ps, distance_metrics, group_variables,
         dir.create(outfilepath1, recursive = TRUE)
         outfilename <- paste0(outfilepath1, marker, "_", level, "_", tax_subset)
         
-        p <- plot_heatmap(ps, taxa.label = "Genus", sample.order = "Lake", 
-                          distance = "bray") + 
-          ggtitle(paste0(marker, " - ", "bray", " heatmap by ", 
-                         "Lake"," - ", level, " - ", tax_subset))
+        if(level == "ASV"){
+          heatlevel <- NULL 
+        } else {
+            heatlevel <- level
+          }
+        
+        heat.p <- plot_heatmap(ps, taxa.label = heatlevel, 
+                               sample.order = group_var, 
+                          distance = dist) +
+          ggtitle(paste0(marker, " - ", dist, " heatmap by ", 
+                         group_var," - ", level, " - ", tax_subset))
         
         ggsave(filename = paste0(outfilename, "_", dist, "_by", group_var,"_heatmap.png"),
-               plot = last_plot(), width = 1000, height = 800, device = png, 
+               plot = heat.p, width = 1000, height = 800, device = png, 
                units = "px", scale = 3)
       }
     }
 }
 
 
-
 dists <- c("jaccard", "bray")
 groupsy <- c("Lake")
-# ords <- c("PCoA", "NMDS")
+ords <- c("PCoA", "NMDS")
 level <- "ASV"
-tax_subset <- "unfiltered"
+tax_subset <- "noRotifer"
 
 heat_plot(ps, dists, groupsy, 
-         marker_outdir, marker, level, tax_subset)
+         markerdir, marker, level, tax_subset)
 
 
 ####################################################################
@@ -265,6 +283,12 @@ dend_plot <- function(ps, group_variables,
   
   samp <- as.data.frame(sample_data(ps))
   for(group_var in group_variables){
+    
+    if(group_var == "Morph_avail" && grepl("Benthic", tax_subset)){
+      next
+    } else if (marker == "Morphological" && group_var != "Lake"){
+      next
+    }
     
     print(paste("Plotting dendrogram", group_var, sep = " "))
     
@@ -334,13 +358,16 @@ dend_plot(ps, groupsy,
 
 ####################################################################
 
+# Select this whole code chunk before running it
 plot_bdiv <- function(ps_object, marker, tax_levels, subsets, marker_outdir,
                       ord_plot_array, heat_plot_array, dend_plot_array){
   # Removing problem samples
   if (marker == "Folmer"){
-    ps <- subset_samples(ps_object, !Tube %in% c("68","9"))
+    ps1 <- subset_samples(ps_object, !Tube %in% c("68","9"))
   } else if (marker == "18S"){
-    ps <- subset_samples(ps_object, Tube != "57")
+    ps1 <- subset_samples(ps_object, Tube != "57")
+  } else if (marker == "Leray" || marker == "Morphological"){
+    ps1 <- ps_object
   }
   
   # Iterating through taxa levels ----
@@ -351,9 +378,9 @@ plot_bdiv <- function(ps_object, marker, tax_levels, subsets, marker_outdir,
     
     # Collapsing data to specified tax_level. NAs removed by default. Use NArm = FALSE if you want to keep
     if(level != "ASV"){
-      ps <- tax_glom(ps_object, taxrank = level)
+      ps2 <- tax_glom(ps1, taxrank = level)
     } else if(level == "ASV"){
-      ps <- ps_object
+      ps2 <- ps1
     }
     
     # Iterating through subsets  ----
@@ -361,6 +388,10 @@ plot_bdiv <- function(ps_object, marker, tax_levels, subsets, marker_outdir,
     for(tax_subset in subsets){
       
       print(paste0("Processing at ", level, " level for ", tax_subset, " subset"))
+      
+      if(marker == "Morphological" && grepl("Benthic", tax_subset)){
+        next
+      }
       
       ####################################################################
       
@@ -370,21 +401,23 @@ plot_bdiv <- function(ps_object, marker, tax_levels, subsets, marker_outdir,
       
       if(tax_subset == "noRotifer"){
         # Subsetting out Rotifers
-        ps <- subset_taxa(ps, Phylum != "Rotifera")
+        ps <- subset_taxa(ps2, Phylum != "Rotifera")
       } else if(tax_subset == "onlyRotifer"){
         # Subsetting only Rotifers
-        ps <- subset_taxa(ps, Phylum == "Rotifera")
+        ps <- subset_taxa(ps2, Phylum == "Rotifera")
       } else if(tax_subset == "noBenthic"){
         # Subsetting samples with Morphological data
-        ps <- subset_samples(ps, Morph_avail == "YES")
+        ps <- subset_samples(ps2, Morph_avail == "YES")
       } else if(tax_subset == "onlyBenthic"){
         # Subsetting samples without Morphological data
-        ps <- subset_samples(ps, Morph_avail == "NO")
+        ps <- subset_samples(ps2, Morph_avail == "NO")
       } else if(tax_subset == "noRotifer_noBenthic"){
         # Subsetting out samples with no Morphological data and Rotifers
-        ps <- ps %>% 
+        ps <- ps2 %>% 
           subset_taxa(Phylum != "Rotifera") %>% 
           subset_samples(Morph_avail == "YES")
+      } else if(tax_subset == "unfiltered"){
+        ps <- ps2
       }
       
       # Create subdirectories if they don't exist
@@ -393,6 +426,9 @@ plot_bdiv <- function(ps_object, marker, tax_levels, subsets, marker_outdir,
       
       # Create output file prefix
       outfilename <- paste0(outfilepath, marker, "_", level, "_", tax_subset)
+      
+      # Sanity check
+      print(paste("ntaxa = ", ntaxa(ps), "nsamples = ", nsamples(ps)))
       
       ##########################################
       # Ordination Plots ----
@@ -431,17 +467,22 @@ plot_bdiv <- function(ps_object, marker, tax_levels, subsets, marker_outdir,
 
 ####################################################################
 tax_levels <- c("ASV", "Species", "Genus")
-subsets <- c("noRotifer", "unfiltered", "noBenthic", "noRotifer_noBenthic")
+subsets <- c("unfiltered", "noRotifer", "noBenthic", "noRotifer_noBenthic")
+
+# Available subsets: unfiltered, noRotifer, noBenthic, noRotifer_noBenthic, onlyRotifer, onlyBenthic
+# Available distances: jaccard, bray
+# Available group variables: Lake, Mesh, Morph_avail
+# Available ordination methods: PCoA, NMDS
 
 ord_plot_array <- list(Distances = c("jaccard", "bray"), 
-                       Group_vars = c("Lake", "Mesh"), 
+                       Group_vars = c("Lake", "Mesh", "Morph_avail"), 
                        Ord_Methods = c("PCoA", "NMDS"))
 
 heat_plot_array <- list(Distances = c("jaccard", "bray"), 
-                       Group_vars = c("Lake", "Mesh"))
+                       Group_vars = c("Lake", "Mesh", "Morph_avail"))
 
-dend_plot_array <- list(Group_vars = c("Lake", "Mesh"))
+dend_plot_array <- list(Group_vars = c("Lake", "Mesh", "Morph_avail"))
 
-plot_bdiv(ps2, marker, tax_levels, subsets, markerdir,
+# Calling plot function
+plot_bdiv(ps, marker, tax_levels, subsets, markerdir,
           ord_plot_array, heat_plot_array, dend_plot_array)
-
