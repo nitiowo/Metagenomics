@@ -200,6 +200,17 @@ seqtab <- otu_table(Leray_ps)
 table(colSums(seqtab>0))
 table(rowSums(seqtab>0))
 
+morph_names <- sample_names(morph_ps)
+comp_folmer_ps <- subset_samples(Folmer_ps, Station_ID %in% morph_names)
+
+
+sample_data(comp_folmer_ps)
+comp_folmer_ps <- merge_samples(comp_folmer_ps, "Station_ID")
+sample_data(comp_folmer_ps)
+
+sample_names(comp_folmer_ps)
+sort(sample_names(morph_ps)) == sort(sample_names(comp_folmer_ps))
+
 
 #################################################################
 # Required packages
