@@ -13,10 +13,11 @@
 **/*RDS
 **/*Rhistory
 **/*RData
+.Rproj.user
 
 # Databases #
 #############
-**/*DB_data
+**/DBs*
 
 # Tools #
 #########
@@ -24,6 +25,7 @@
 
 # Output files #
 ################
+**/*outputs
 **/*pdf
 **/*csv
 **/*tsv
@@ -37,9 +39,8 @@
 # Reference files #
 ###################
 **/*.xml
-**/*.zip
 
 # Job logs #
 ############
 **/*joblog*
-.Rproj.user
+**/*job_log*
