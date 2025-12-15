@@ -1,0 +1,17 @@
+#!/bin/bash
+set -euo pipefail
+#$ -N clustering_byHeader_tax
+#$ -pe smp 8
+#$ -o job_logs/
+#$ -e job_logs/
+#$ -q largemem
+#$ -M nvincen2@nd.edu
+#$ -m abe
+
+conda activate clustering-env
+
+python3.14 ../../DB_scripts/cluster_by_header.py \
+--in_fasta ../dada_assignTax_withOutgroups.fasta \
+--id_thresh 1.0 \
+--out_prefix tax_cluster \
+--threads 8
