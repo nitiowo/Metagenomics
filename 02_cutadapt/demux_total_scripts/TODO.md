@@ -1,0 +1,9 @@
+- Move summarizer functionality to python script
+- Allow initial script to call data from outside of repo
+- Change reverse unknowns to unknownr and forwards to unknownf
+- Remove primer hardcoding
+- Make big master jobsub script
+- Combine forward and reverse total summary scripts
+	- Swap to awk strategy
+- Fix directory and script names (numbering system?)
+- Delete combination pathlist files after concatenation
