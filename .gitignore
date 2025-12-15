@@ -42,3 +42,4 @@
 # Job logs #
 ############
 **/*joblog*
+.Rproj.user
