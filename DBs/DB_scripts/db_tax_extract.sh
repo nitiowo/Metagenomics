@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# usage: db_tax_extract.sh 
+# usage: db_tax_extract.sh db_file out_file
 
 cat $1 \
   | grep '^>' \
@@ -15,5 +15,4 @@ cat $1 \
         }
         printf("\n");
       }' \
-  > taxa_table.tsv
-
+  > $2

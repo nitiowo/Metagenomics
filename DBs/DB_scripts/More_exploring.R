@@ -8,7 +8,7 @@ library(taxize)
 setwd('/Volumes/Samsung_1TB/Zooplankton/')
 
 total_bold <- read.csv("./Metagenomics/DBs/BOLD_pull_direct/taxa_table.tsv", fill = TRUE, header = F, sep = "\t") 
-outdir <- "./Metagenomics/DBs/DB_wrangling//"
+outdir <- "./Metagenomics/DBs/DB_wrangling/"
 treb <- read.csv("./Metagenomics/DBs/DB_wrangling/Trebitz_list_2025.txt", fill = TRUE, header = TRUE, sep = "\t") #Trebitz taxa list
 
 treb.unique.Class <- unique(treb$Class)
@@ -18,6 +18,13 @@ treb.unique.Species <- unique(treb$Species)
 
 # df <- read_tsv("taxa_table.tsv", col_types = cols(.default = "c"))  # all cols as character
 
+# Find total number of sequences before collapsing:
+# only_relevant_from_BOLD1 <- total_bold %>% 
+#   filter(V4 %in% treb.unique.Class |
+#            V4 %in% c("Copepoda", "Thecostraca", "Malacostraca", "Tantulocarida", "Maxillopoda", "Monogononta"))
+# dim(only_relevant_from_BOLD1)
+
+# Collapse identical taxonomy, add count collumn
 result <- total_bold %>%
   select(-1) %>%                     # drop ID column (first column)
   count(across(everything()), name = "count") %>%
@@ -25,6 +32,14 @@ result <- total_bold %>%
 
 cols <- c("Kingdom", "Phylum", "Class", "Order", "Family", "Subfamily", "Genus", "Species", "Subspecies", "count")
 colnames(result) <- cols
+
+only_relevant_from_BOLD <- result %>% 
+  filter(Class %in% treb.unique.Class |
+           Class %in% c("Copepoda", "Thecostraca", "Malacostraca", "Tantulocarida", "Maxillopoda", "Monogononta", "Ichthyostraca"))
+
+# Find percent of "None" species barcodes in dataset:
+# sum(only_relevant_from_BOLD$count[only_relevant_from_BOLD$Species == "None"])/sum(only_relevant_from_BOLD$count)
+
 # 
 # result %>%
 #   group_by(Phylum) %>%
@@ -113,15 +128,8 @@ plot_subrank_within_rank <- function(df,
   invisible(df_collapsed)  # return the plotting table if user wants to inspect
 }
 
-
-# Collapse identical taxonomy, add count collumn
-result <- only_relevant_from_BOLD %>%
-  select(-1) %>%                     # drop ID column (first column)
-  count(across(everything()), name = "count") %>%
-  arrange(desc(count))
-
 # Plot top 12 phyla, keeping top 8 classes per phylum
-plot_subrank_within_rank(result,
+plot_subrank_within_rank(only_relevant_from_BOLD,
                          rank = "Class",
                          subrank = "Genus",
                          top_n_rank = 10,
@@ -157,7 +165,8 @@ only_relevant_from_BOLD <- total_bold %>%
 write_csv(only_relevant_from_BOLD, 
           file = paste0(outdir, "BOLD_TrebitzClassSubset_taxList.csv"), col_names = TRUE)
 
-non_unique_elements <- only_relevant_from_BOLD$ID[duplicated(only_relevant_from_BOLD$ID) | duplicated(only_relevant_from_BOLD$ID, fromLast = TRUE)]
+non_unique_elements <- only_relevant_from_BOLD$ID[duplicated(only_relevant_from_BOLD$ID) | 
+                                                  duplicated(only_relevant_from_BOLD$ID, fromLast = TRUE)]
 
 
 length(unique(total_bold$Order))
@@ -176,7 +185,9 @@ no.bold.data     # What's in the list of missing stuff, but also has no bold ent
 # Check what's happening with the ones that say they don't have bold entry:
 really.notIn.bold <- setdiff(no.bold.data, unique(total_bold$Species))
 really.notIn.bold  # Say they don't have BOLD entry, don't appear in master BOLD database.
-# These check out - no entry in master BOLD database, or the BOLD website
+# Everything in the Trebitz list that says it doesn't have a BOLD entry is absent from the master BOLD list.
+# Check BOLD website for these? 
+# Could also run these through taxize and use iBol as the reference to see if any synonymized names are recoverable
 
 shouldHave.bold.data <- Reduce(intersect, list(missing, Bold_treb))
 shouldHave.bold.data   # Appear in Trebitz, say they have BOLD data, but do not appear in subset.
@@ -196,6 +207,14 @@ fakerm.shouldHave.bold # These should have BOLD data but something weird is happ
 # If any of these end up having barcodes, we have them in the database.
 # Only reason to come back to these is to disambiguate to report how many barcodes were missing
 # End goal for this set is to sort it into either 1) Has barcode, and disambiguate name or 2) Doesn't have barcode.
+
+# Find rows in trebitz list using fakerm list, and write out to csv with BOLD links.
+treb.shouldHave.bold <- treb %>% 
+  select(Species, BOLD.Entry) %>% 
+  filter(Species %in% fakerm.shouldHave.bold)
+
+write.csv(treb.shouldHave.bold, paste0(outdir,"shouldHaveBold_toCheck.csv"))
+
 
 # Sanity check
 length(shouldHave.bold.data) == length(fakerm.shouldHave.bold) + length(fake.notIn.bold)
@@ -231,13 +250,13 @@ Bold_treb <- treb$Species[grepl("v4", treb$BOLD.Entry)]
 unique(treb$BOLD.Entry[!grepl("v4", treb$BOLD.Entry)])
 
 
-"Argulus americanus" %in% treb$Species
+"Alona circumfimbriata" %in% treb$Species
 unique(treb$Class[treb$Species == "Cupelopagis vorax"]) 
 #%in% total_bold$Order
 
 
-"Dicranophorus caudatus" %in% total_bold$Species
-unique(total_bold$Class[total_bold$Species == "Cupelopagis vorax"]) 
+"Bosmina freyi" %in% total_bold$Species
+unique(total_bold$Species[total_bold$Genus == "Coronatella"]) 
 
 
 
@@ -251,7 +270,7 @@ gna_verifier("Moinidae")
 foo <- taxize::get_gbifid("Moinidae")
 
 
-fool <- classification("Monogononta", db = "gbif")
+fool <- classification("Daphnia margna", db = "gbif")
 fool
 
 
