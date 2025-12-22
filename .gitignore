@@ -46,5 +46,5 @@
 **/*job_log*
 
 # Others #
-**/*cluster_by_header.py
-**/*cluster_vsearch.py
+##########
+**/*helper
