@@ -18,7 +18,7 @@
 ##     Path to tab-separated sample sheet
 ##     Type: string
 ## -----------------------------------------------------------------------------
-# input: null
+input: null
 
 ## -----------------------------------------------------------------------------
 ## input_fasta
@@ -59,7 +59,7 @@
 ##     skipped (barplots, PCoA plots, ...).
 ##     Type: string
 ## -----------------------------------------------------------------------------
-# metadata: null
+metadata: null
 
 ## -----------------------------------------------------------------------------
 ## multiregion
@@ -78,7 +78,7 @@
 ##     Type: string
 ##     Required
 ## -----------------------------------------------------------------------------
-# outdir: null
+outdir: null
 
 ## -----------------------------------------------------------------------------
 ## save_intermediates
@@ -86,7 +86,7 @@
 ##     Save intermediate results such as QIIME2's qza and qzv files
 ##     Type: boolean
 ## -----------------------------------------------------------------------------
-# save_intermediates: null
+save_intermediates: null
 
 ## -----------------------------------------------------------------------------
 ## email
@@ -94,7 +94,7 @@
 ##     Email address for completion summary.
 ##     Type: string
 ## -----------------------------------------------------------------------------
-# email: null
+email: null
 
 
 ## =============================================================================
@@ -181,7 +181,7 @@
 ##     Ignore input files with too few reads.
 ##     Type: boolean
 ## -----------------------------------------------------------------------------
-# ignore_empty_input_files: null
+ignore_empty_input_files: null
 
 
 ## =============================================================================
@@ -512,7 +512,7 @@
 ##     Path to a custom DADA2 reference taxonomy database
 ##     Type: string
 ## -----------------------------------------------------------------------------
-# dada_ref_tax_custom: null
+dada_ref_tax_custom: null
 
 ## -----------------------------------------------------------------------------
 ## dada_ref_tax_custom_sp
@@ -521,7 +521,7 @@
 ##     assignment
 ##     Type: string
 ## -----------------------------------------------------------------------------
-# dada_ref_tax_custom_sp: null
+dada_ref_tax_custom_sp: null
 
 ## -----------------------------------------------------------------------------
 ## dada_min_boot
@@ -540,7 +540,7 @@
 ##     assignTaxonomy function
 ##     Type: string
 ## -----------------------------------------------------------------------------
-# dada_assign_taxlevels: null
+dada_assign_taxlevels: null
 
 ## -----------------------------------------------------------------------------
 ## cut_dada_ref_taxonomy
@@ -566,7 +566,7 @@
 ##     classification
 ##     Type: boolean
 ## -----------------------------------------------------------------------------
-# dada_taxonomy_rc: null
+dada_taxonomy_rc: null
 
 ## -----------------------------------------------------------------------------
 ## dada_assign_chunksize
@@ -821,7 +821,7 @@
 ##     Comma separated list of metadata column headers for statistics.
 ##     Type: string
 ## -----------------------------------------------------------------------------
-# metadata_category: null
+metadata_category: null
 
 ## -----------------------------------------------------------------------------
 ## metadata_category_barplot
@@ -830,7 +830,7 @@
 ##     relative abundance barplots.
 ##     Type: string
 ## -----------------------------------------------------------------------------
-# metadata_category_barplot: null
+metadata_category_barplot: null
 
 ## -----------------------------------------------------------------------------
 ## qiime_adonis_formula
@@ -912,7 +912,7 @@
 ##     Perform differential abundance analysis with ANCOMBC
 ##     Type: boolean
 ## -----------------------------------------------------------------------------
-# ancombc: null
+ancombc: null
 
 ## -----------------------------------------------------------------------------
 ## ancombc_formula
@@ -920,7 +920,7 @@
 ##     Formula to perform differential abundance analysis with ANCOMBC
 ##     Type: string
 ## -----------------------------------------------------------------------------
-# ancombc_formula: null
+ancombc_formula: null
 
 ## -----------------------------------------------------------------------------
 ## ancombc_formula_reflvl
@@ -928,7 +928,7 @@
 ##     Reference level for `--ancombc_formula`
 ##     Type: string
 ## -----------------------------------------------------------------------------
-# ancombc_formula_reflvl: null
+ancombc_formula_reflvl: null
 
 ## -----------------------------------------------------------------------------
 ## ancombc_effect_size
@@ -937,7 +937,7 @@
 ##     `--ancombc` and `--ancombc_formula`
 ##     Type: number
 ## -----------------------------------------------------------------------------
-# ancombc_effect_size: 1.0
+ancombc_effect_size: 1.0
 
 ## -----------------------------------------------------------------------------
 ## ancombc_significance
@@ -946,7 +946,7 @@
 ##     `--ancombc` and `--ancombc_formula`
 ##     Type: number
 ## -----------------------------------------------------------------------------
-# ancombc_significance: 0.05
+ancombc_significance: 0.05
 
 
 ## =============================================================================
@@ -960,7 +960,7 @@
 ##     Path to Markdown file (Rmd)
 ##     Type: string
 ## -----------------------------------------------------------------------------
-# report_template: "${projectDir}/assets/report_template.Rmd"
+report_template: "${projectDir}/assets/report_template.Rmd"
 
 ## -----------------------------------------------------------------------------
 ## report_css
@@ -968,7 +968,7 @@
 ##     Path to style file (css)
 ##     Type: string
 ## -----------------------------------------------------------------------------
-# report_css: "${projectDir}/assets/nf-core_style.css"
+report_css: "${projectDir}/assets/nf-core_style.css"
 
 ## -----------------------------------------------------------------------------
 ## report_logo
@@ -984,7 +984,7 @@
 ##     String used as report title
 ##     Type: string
 ## -----------------------------------------------------------------------------
-# report_title: "Summary of analysis results"
+report_title: "Summary of analysis results"
 
 ## -----------------------------------------------------------------------------
 ## report_abstract
@@ -992,7 +992,7 @@
 ##     Path to Markdown file (md) that replaces the 'Abstract' section
 ##     Type: string
 ## -----------------------------------------------------------------------------
-# report_abstract: null
+report_abstract: null
 
 
 ## =============================================================================
@@ -1005,7 +1005,7 @@
 ##     Skip FastQC
 ##     Type: boolean
 ## -----------------------------------------------------------------------------
-# skip_fastqc: null
+skip_fastqc: null
 
 ## -----------------------------------------------------------------------------
 ## skip_cutadapt
@@ -1015,7 +1015,7 @@
 ##     contain any primer sequences.
 ##     Type: boolean
 ## -----------------------------------------------------------------------------
-# skip_cutadapt: null
+skip_cutadapt: null
 
 ## -----------------------------------------------------------------------------
 ## skip_dada_quality
@@ -1042,7 +1042,7 @@
 ##     tables, diversity analysis, differential abundance testing.
 ##     Type: boolean
 ## -----------------------------------------------------------------------------
-# skip_qiime: null
+skip_qiime: null
 
 ## -----------------------------------------------------------------------------
 ## skip_qiime_downstream
