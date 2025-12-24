@@ -18,7 +18,7 @@
 ##     Path to tab-separated sample sheet
 ##     Type: string
 ## -----------------------------------------------------------------------------
-input: null
+input: /temp180/mpfrende/nvincen2/Metagenomics/02_cutadapt/demux_out/01c_rescue/mICOintF/mICOintF_samplesheet.tsv
 
 ## -----------------------------------------------------------------------------
 ## input_fasta
@@ -59,7 +59,7 @@ input: null
 ##     skipped (barplots, PCoA plots, ...).
 ##     Type: string
 ## -----------------------------------------------------------------------------
-metadata: null
+metadata: /temp180/mpfrende/nvincen2/Metagenomics/Data/zoop96_metadata.tsv
 
 ## -----------------------------------------------------------------------------
 ## multiregion
@@ -78,7 +78,7 @@ metadata: null
 ##     Type: string
 ##     Required
 ## -----------------------------------------------------------------------------
-outdir: null
+outdir: "/temp180/mpfrende/nvincen2/Metagenomics/nf-core_ampliseq/nfcore_output"
 
 ## -----------------------------------------------------------------------------
 ## save_intermediates
@@ -86,7 +86,7 @@ outdir: null
 ##     Save intermediate results such as QIIME2's qza and qzv files
 ##     Type: boolean
 ## -----------------------------------------------------------------------------
-save_intermediates: null
+save_intermediates: TRUE
 
 ## -----------------------------------------------------------------------------
 ## email
@@ -94,7 +94,7 @@ save_intermediates: null
 ##     Email address for completion summary.
 ##     Type: string
 ## -----------------------------------------------------------------------------
-email: null
+email: "nvincen2@nd.edu"
 
 
 ## =============================================================================
@@ -181,7 +181,7 @@ email: null
 ##     Ignore input files with too few reads.
 ##     Type: boolean
 ## -----------------------------------------------------------------------------
-ignore_empty_input_files: null
+ignore_empty_input_files: TRUE
 
 
 ## =============================================================================
@@ -197,7 +197,7 @@ ignore_empty_input_files: null
 ##     not expected to contain primer sequences.
 ##     Type: boolean
 ## -----------------------------------------------------------------------------
-# retain_untrimmed: null
+retain_untrimmed: TRUE
 
 ## -----------------------------------------------------------------------------
 ## cutadapt_min_overlap
@@ -248,7 +248,7 @@ ignore_empty_input_files: null
 ##     or equal to `--truncq`.
 ##     Type: integer
 ## -----------------------------------------------------------------------------
-# truncq: 2
+truncq: 5
 
 ## -----------------------------------------------------------------------------
 ## trunclenf
@@ -275,7 +275,7 @@ ignore_empty_input_files: null
 ##     automatically determined using this median quality score
 ##     Type: integer
 ## -----------------------------------------------------------------------------
-# trunc_qmin: 25
+trunc_qmin: 25
 
 ## -----------------------------------------------------------------------------
 ## trunc_rmin
@@ -284,7 +284,7 @@ ignore_empty_input_files: null
 ##     reads.
 ##     Type: number
 ## -----------------------------------------------------------------------------
-# trunc_rmin: 0.75
+trunc_rmin: 0.75
 
 ## -----------------------------------------------------------------------------
 ## max_ee
@@ -292,7 +292,7 @@ ignore_empty_input_files: null
 ##     DADA2 read filtering option
 ##     Type: integer
 ## -----------------------------------------------------------------------------
-# max_ee: 2
+max_ee: 3
 
 ## -----------------------------------------------------------------------------
 ## min_len
@@ -300,7 +300,7 @@ ignore_empty_input_files: null
 ##     DADA2 read filtering option
 ##     Type: integer
 ## -----------------------------------------------------------------------------
-# min_len: 50
+min_len: 50
 
 ## -----------------------------------------------------------------------------
 ## max_len
@@ -316,7 +316,7 @@ ignore_empty_input_files: null
 ##     Ignore files with too few reads after quality filtering.
 ##     Type: boolean
 ## -----------------------------------------------------------------------------
-# ignore_failed_filtering: null
+ignore_failed_filtering: TRUE
 
 
 ## =============================================================================
@@ -329,7 +329,7 @@ ignore_empty_input_files: null
 ##     Mode of sample inference: "independent", "pooled" or "pseudo"
 ##     Type: string
 ## -----------------------------------------------------------------------------
-# sample_inference: "independent"
+sample_inference: "pseudo"
 
 ## -----------------------------------------------------------------------------
 ## mergepairs_strategy
@@ -512,7 +512,7 @@ ignore_empty_input_files: null
 ##     Path to a custom DADA2 reference taxonomy database
 ##     Type: string
 ## -----------------------------------------------------------------------------
-dada_ref_tax_custom: null
+dada_ref_tax_custom: "/temp180/mpfrende/nvincen2/Metagenomics/DBs/DB_data/dada_formatted/tax_cluster_noempty_newparse.clustered.fasta"
 
 ## -----------------------------------------------------------------------------
 ## dada_ref_tax_custom_sp
@@ -521,7 +521,7 @@ dada_ref_tax_custom: null
 ##     assignment
 ##     Type: string
 ## -----------------------------------------------------------------------------
-dada_ref_tax_custom_sp: null
+dada_ref_tax_custom_sp: "/temp180/mpfrende/nvincen2/Metagenomics/DBs/DB_data/dada_formatted/id_cluster_noempty_newparse.clustered.fasta"
 
 ## -----------------------------------------------------------------------------
 ## dada_min_boot
@@ -540,7 +540,7 @@ dada_ref_tax_custom_sp: null
 ##     assignTaxonomy function
 ##     Type: string
 ## -----------------------------------------------------------------------------
-dada_assign_taxlevels: null
+dada_assign_taxlevels: "Kingdom,Phylum,Class,Order,Family,Genus,Species"
 
 ## -----------------------------------------------------------------------------
 ## cut_dada_ref_taxonomy
@@ -566,7 +566,7 @@ dada_assign_taxlevels: null
 ##     classification
 ##     Type: boolean
 ## -----------------------------------------------------------------------------
-dada_taxonomy_rc: null
+dada_taxonomy_rc: TRUE
 
 ## -----------------------------------------------------------------------------
 ## dada_assign_chunksize
@@ -821,8 +821,7 @@ dada_taxonomy_rc: null
 ##     Comma separated list of metadata column headers for statistics.
 ##     Type: string
 ## -----------------------------------------------------------------------------
-metadata_category: null
-
+metadata_category: "Station_ID,Mesh,Lake,Morph_avail"
 ## -----------------------------------------------------------------------------
 ## metadata_category_barplot
 ## -----------------------------------------------------------------------------
@@ -830,7 +829,7 @@ metadata_category: null
 ##     relative abundance barplots.
 ##     Type: string
 ## -----------------------------------------------------------------------------
-metadata_category_barplot: null
+metadata_category_barplot: "Station_ID,Mesh,Lake,Morph_avail"
 
 ## -----------------------------------------------------------------------------
 ## qiime_adonis_formula
@@ -839,7 +838,7 @@ metadata_category_barplot: null
 ##     diversity distances
 ##     Type: string
 ## -----------------------------------------------------------------------------
-# qiime_adonis_formula: null
+qiime_adonis_formula: "Lake,Station_ID,Mesh,Morph_avail,Lake+Mesh,Station_ID+Mesh"
 
 ## -----------------------------------------------------------------------------
 ## picrust
@@ -912,7 +911,7 @@ metadata_category_barplot: null
 ##     Perform differential abundance analysis with ANCOMBC
 ##     Type: boolean
 ## -----------------------------------------------------------------------------
-ancombc: null
+ancombc: TRUE
 
 ## -----------------------------------------------------------------------------
 ## ancombc_formula
@@ -920,7 +919,7 @@ ancombc: null
 ##     Formula to perform differential abundance analysis with ANCOMBC
 ##     Type: string
 ## -----------------------------------------------------------------------------
-ancombc_formula: null
+ancombc_formula: "Lake,Station_ID,Mesh,Morph_avail,Lake+Mesh,Station_ID+Mesh"
 
 ## -----------------------------------------------------------------------------
 ## ancombc_formula_reflvl
@@ -960,7 +959,7 @@ ancombc_significance: 0.05
 ##     Path to Markdown file (Rmd)
 ##     Type: string
 ## -----------------------------------------------------------------------------
-report_template: "${projectDir}/assets/report_template.Rmd"
+report_template: "${nfcore_output}/assets/report_template.Rmd"
 
 ## -----------------------------------------------------------------------------
 ## report_css
@@ -968,7 +967,7 @@ report_template: "${projectDir}/assets/report_template.Rmd"
 ##     Path to style file (css)
 ##     Type: string
 ## -----------------------------------------------------------------------------
-report_css: "${projectDir}/assets/nf-core_style.css"
+report_css: "${nfcore_output}/assets/nf-core_style.css"
 
 ## -----------------------------------------------------------------------------
 ## report_logo
@@ -992,7 +991,7 @@ report_title: "Summary of analysis results"
 ##     Path to Markdown file (md) that replaces the 'Abstract' section
 ##     Type: string
 ## -----------------------------------------------------------------------------
-report_abstract: null
+# report_abstract: null
 
 
 ## =============================================================================
@@ -1005,7 +1004,7 @@ report_abstract: null
 ##     Skip FastQC
 ##     Type: boolean
 ## -----------------------------------------------------------------------------
-skip_fastqc: null
+skip_fastqc: TRUE
 
 ## -----------------------------------------------------------------------------
 ## skip_cutadapt
@@ -1015,7 +1014,7 @@ skip_fastqc: null
 ##     contain any primer sequences.
 ##     Type: boolean
 ## -----------------------------------------------------------------------------
-skip_cutadapt: null
+# skip_cutadapt: null
 
 ## -----------------------------------------------------------------------------
 ## skip_dada_quality
@@ -1032,7 +1031,7 @@ skip_cutadapt: null
 ##     Skip annotating SSU matches.
 ##     Type: boolean
 ## -----------------------------------------------------------------------------
-# skip_barrnap: null
+skip_barrnap: TRUE
 
 ## -----------------------------------------------------------------------------
 ## skip_qiime
@@ -1042,7 +1041,7 @@ skip_cutadapt: null
 ##     tables, diversity analysis, differential abundance testing.
 ##     Type: boolean
 ## -----------------------------------------------------------------------------
-skip_qiime: null
+# skip_qiime: null
 
 ## -----------------------------------------------------------------------------
 ## skip_qiime_downstream
