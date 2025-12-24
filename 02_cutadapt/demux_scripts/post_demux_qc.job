@@ -1,0 +1,18 @@
+#!/bin/bash
+set -euo pipefail
+#$ -N fastqc_post_demux
+#$ -cwd
+#$ -pe smp 4        # 4 cores per task
+#$ -o job_logs/
+#$ -e job_logs/
+#$ -q largemem
+#$ -M nvincen2@nd.edu
+#$ -m abe
+
+conda activate multiqc-env
+
+mkdir -p ./fastqc_output
+
+fastqc ./*.fastq* -o ./fastqc_output
+
+multiqc ./fastqc_output/
