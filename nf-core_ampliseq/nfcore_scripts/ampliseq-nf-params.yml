@@ -1014,7 +1014,7 @@ skip_fastqc: TRUE
 ##     contain any primer sequences.
 ##     Type: boolean
 ## -----------------------------------------------------------------------------
-# skip_cutadapt: null
+skip_cutadapt: TRUE
 
 ## -----------------------------------------------------------------------------
 ## skip_dada_quality
