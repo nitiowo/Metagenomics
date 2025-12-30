@@ -42,7 +42,7 @@ input: /temp180/mpfrende/nvincen2/Metagenomics/02_cutadapt/demux_out/01c_rescue/
 ##     Forward primer sequence
 ##     Type: string
 ## -----------------------------------------------------------------------------
-# FW_primer: null
+FW_primer: "GGWACWGGWTGAACWGTWTAYCCYCC"
 
 ## -----------------------------------------------------------------------------
 ## RV_primer
@@ -50,7 +50,7 @@ input: /temp180/mpfrende/nvincen2/Metagenomics/02_cutadapt/demux_out/01c_rescue/
 ##     Reverse primer sequence
 ##     Type: string
 ## -----------------------------------------------------------------------------
-# RV_primer: null
+RV_primer: "TAAACTTCAGGGTGACCAAAAAATCA"
 
 ## -----------------------------------------------------------------------------
 ## metadata
@@ -1014,7 +1014,7 @@ skip_fastqc: TRUE
 ##     contain any primer sequences.
 ##     Type: boolean
 ## -----------------------------------------------------------------------------
-skip_cutadapt: TRUE
+# skip_cutadapt: null
 
 ## -----------------------------------------------------------------------------
 ## skip_dada_quality
