@@ -26,7 +26,8 @@
 
 # Output files #
 ################
-**/*outputs
+**/*output*
+**/*work
 **/*pdf
 **/*csv
 **/*tsv

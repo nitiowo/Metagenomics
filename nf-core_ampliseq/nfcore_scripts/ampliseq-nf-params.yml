@@ -18,7 +18,7 @@
 ##     Path to tab-separated sample sheet
 ##     Type: string
 ## -----------------------------------------------------------------------------
-input: /temp180/mpfrende/nvincen2/Metagenomics/02_cutadapt/demux_out/01c_rescue/mICOintF/mICOintF_samplesheet.tsv
+input: /temp180/mpfrende/nvincen2/Metagenomics/02_cutadapt/demux_out/01c_rescue/mICOintF/no75-87-88_mICOintF_samplesheet.tsv
 
 ## -----------------------------------------------------------------------------
 ## input_fasta
@@ -78,7 +78,7 @@ metadata: /temp180/mpfrende/nvincen2/Metagenomics/Data/zoop96_metadata.tsv
 ##     Type: string
 ##     Required
 ## -----------------------------------------------------------------------------
-outdir: "/temp180/mpfrende/nvincen2/Metagenomics/nf-core_ampliseq/nfcore_output"
+outdir: /temp180/mpfrende/nvincen2/Metagenomics/nf-core_ampliseq/nfcore_output
 
 ## -----------------------------------------------------------------------------
 ## save_intermediates
@@ -855,7 +855,7 @@ qiime_adonis_formula: "Lake,Station_ID,Mesh,Morph_avail,Lake+Mesh,Station_ID+Mes
 ##     infrastructure) Excel format.
 ##     Type: boolean
 ## -----------------------------------------------------------------------------
-# sbdiexport: null
+sbdiexport: FALSE
 
 ## -----------------------------------------------------------------------------
 ## diversity_rarefaction_depth
@@ -959,7 +959,7 @@ ancombc_significance: 0.05
 ##     Path to Markdown file (Rmd)
 ##     Type: string
 ## -----------------------------------------------------------------------------
-report_template: "${nfcore_output}/assets/report_template.Rmd"
+# report_template: "${nfcore_output}/assets/report_template.Rmd"
 
 ## -----------------------------------------------------------------------------
 ## report_css
@@ -967,7 +967,7 @@ report_template: "${nfcore_output}/assets/report_template.Rmd"
 ##     Path to style file (css)
 ##     Type: string
 ## -----------------------------------------------------------------------------
-report_css: "${nfcore_output}/assets/nf-core_style.css"
+# report_css: "${nfcore_output}/assets/nf-core_style.css"
 
 ## -----------------------------------------------------------------------------
 ## report_logo
