@@ -21,4 +21,5 @@ nextflow run nf-core/ampliseq \
 -profile apptainer \
 -r 2.15.0 \
 -params-file /temp180/mpfrende/nvincen2/Metagenomics/nf-core_ampliseq/nfcore_scripts/ampliseq-nf-params.yml \
--name run64
+-name run64_less_ancom \
+--outdir /temp180/mpfrende/nvincen2/Metagenomics/nf-core_ampliseq/nfcore_output/run2/

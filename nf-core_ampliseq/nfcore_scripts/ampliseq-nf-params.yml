@@ -78,7 +78,7 @@ metadata: /temp180/mpfrende/nvincen2/Metagenomics/Data/zoop96_metadata.tsv
 ##     Type: string
 ##     Required
 ## -----------------------------------------------------------------------------
-outdir: /temp180/mpfrende/nvincen2/Metagenomics/nf-core_ampliseq/nfcore_output
+# outdir: /temp180/mpfrende/nvincen2/Metagenomics/nf-core_ampliseq/nfcore_output
 
 ## -----------------------------------------------------------------------------
 ## save_intermediates
@@ -919,7 +919,7 @@ ancombc: TRUE
 ##     Formula to perform differential abundance analysis with ANCOMBC
 ##     Type: string
 ## -----------------------------------------------------------------------------
-ancombc_formula: "Lake,Station_ID,Mesh,Morph_avail,Lake+Mesh,Station_ID+Mesh"
+ancombc_formula: "Lake+Station_ID+Mesh+Morph_avail+Lake*Morph_avail"
 
 ## -----------------------------------------------------------------------------
 ## ancombc_formula_reflvl
