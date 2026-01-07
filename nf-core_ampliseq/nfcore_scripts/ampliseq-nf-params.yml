@@ -838,7 +838,7 @@ metadata_category_barplot: "Station_ID,Mesh,Lake,Morph_avail"
 ##     diversity distances
 ##     Type: string
 ## -----------------------------------------------------------------------------
-qiime_adonis_formula: "Lake,Station_ID,Mesh,Morph_avail,Lake+Mesh,Station_ID+Mesh"
+qiime_adonis_formula: "Station_ID+Mesh+Lake*Morph_avail"
 
 ## -----------------------------------------------------------------------------
 ## picrust
@@ -919,7 +919,7 @@ ancombc: TRUE
 ##     Formula to perform differential abundance analysis with ANCOMBC
 ##     Type: string
 ## -----------------------------------------------------------------------------
-ancombc_formula: "Lake+Station_ID+Mesh+Morph_avail+Lake*Morph_avail"
+ancombc_formula: "Station_ID+Mesh+Lake*Morph_avail"
 
 ## -----------------------------------------------------------------------------
 ## ancombc_formula_reflvl
