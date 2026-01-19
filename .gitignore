@@ -42,10 +42,9 @@
 ###################
 **/*.xml
 
-# Job logs #
+# Log files #
 ############
-**/*joblog*
-**/*job_log*
+**/*log*
 
 # Others #
 ##########

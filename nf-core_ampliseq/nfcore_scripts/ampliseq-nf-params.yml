@@ -838,7 +838,7 @@ metadata_category_barplot: "Station_ID,Mesh,Lake,Morph_avail"
 ##     diversity distances
 ##     Type: string
 ## -----------------------------------------------------------------------------
-qiime_adonis_formula: "Station_ID+Mesh+Lake*Morph_avail"
+qiime_adonis_formula: "Lake"
 
 ## -----------------------------------------------------------------------------
 ## picrust
@@ -903,7 +903,7 @@ sbdiexport: FALSE
 ##     Perform differential abundance analysis with ANCOM
 ##     Type: boolean
 ## -----------------------------------------------------------------------------
-# ancom: null
+# ancom: TRUE
 
 ## -----------------------------------------------------------------------------
 ## ancombc
@@ -911,7 +911,7 @@ sbdiexport: FALSE
 ##     Perform differential abundance analysis with ANCOMBC
 ##     Type: boolean
 ## -----------------------------------------------------------------------------
-ancombc: TRUE
+# ancombc: TRUE
 
 ## -----------------------------------------------------------------------------
 ## ancombc_formula
@@ -919,7 +919,7 @@ ancombc: TRUE
 ##     Formula to perform differential abundance analysis with ANCOMBC
 ##     Type: string
 ## -----------------------------------------------------------------------------
-ancombc_formula: "Station_ID+Mesh+Lake*Morph_avail"
+# ancombc_formula: "Lake"
 
 ## -----------------------------------------------------------------------------
 ## ancombc_formula_reflvl
@@ -927,7 +927,7 @@ ancombc_formula: "Station_ID+Mesh+Lake*Morph_avail"
 ##     Reference level for `--ancombc_formula`
 ##     Type: string
 ## -----------------------------------------------------------------------------
-ancombc_formula_reflvl: null
+# ancombc_formula_reflvl: null
 
 ## -----------------------------------------------------------------------------
 ## ancombc_effect_size
@@ -936,7 +936,7 @@ ancombc_formula_reflvl: null
 ##     `--ancombc` and `--ancombc_formula`
 ##     Type: number
 ## -----------------------------------------------------------------------------
-ancombc_effect_size: 1.0
+# ancombc_effect_size: 1.0
 
 ## -----------------------------------------------------------------------------
 ## ancombc_significance
@@ -945,7 +945,7 @@ ancombc_effect_size: 1.0
 ##     `--ancombc` and `--ancombc_formula`
 ##     Type: number
 ## -----------------------------------------------------------------------------
-ancombc_significance: 0.05
+# ancombc_significance: 0.05
 
 
 ## =============================================================================
