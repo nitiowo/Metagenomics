@@ -15,4 +15,4 @@ Rscript /temp180/mpfrende/nvincen2/Metagenomics/04_dadaTax/dada_tax_scripts/dada
         --spref /temp180/mpfrende/nvincen2/Metagenomics/DBs/DB_data/dada_formatted/id_cluster_noempty_newparse.clustered.fasta \
         --outdir /temp180/mpfrende/nvincen2/Metagenomics/04_dadaTax/dada_tax_output/mICOintF \
         --outprefix "mICOintF"
-        
+
