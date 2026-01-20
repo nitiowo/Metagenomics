@@ -2,7 +2,7 @@
 #$ -M nvincen2@nd.edu
 #$ -m abe
 #$ -q largemem
-#$ -pe smp 8
+#$ -pe smp 16
 #$ -N dada2_mICOint
 #$ -o job_logs/
 #$ -e job_logs/

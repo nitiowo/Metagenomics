@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -euo pipefail
+# usage: samplesheet_gen.sh <inputDir> <outputFile>
 
 INDIR="${1:-.}"
 OUT="${2:-samplesheet.tsv}"
@@ -24,6 +24,7 @@ for f in "$INDIR"/*_R1*.fastq.gz; do
   [ -f "$f" ] || continue
   base=$(basename "$f")
   sample="${base%%_*}"                    # first token before first underscore
+  sample="Z${sample}"		# add "Z" before sample names to avoid issues with numerical fields. Comment out if unneeded.
   # expected reverse file by simple substitution
   rev="${f/_R1/_R2}"
   # if that doesn't exist try also replacing "R1"->"R2" without underscore

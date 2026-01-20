@@ -22,11 +22,11 @@ export NXF_APPTAINER_CACHEDIR=/temp180/mpfrende/nvincen2/.apptainer
 
 # Run the pipeline
 nextflow run nf-core/ampliseq \
--profile apptainer \
+-profile uge \
 -r 2.15.0 \
 -params-file /temp180/mpfrende/nvincen2/Metagenomics/nf-core_ampliseq/nfcore_scripts/ampliseq-nf-params.yml \
---outdir /temp180/mpfrende/nvincen2/Metagenomics/nf-core_ampliseq/nfcore_output/run13/ \
--name new_tmp
+--outdir /temp180/mpfrende/nvincen2/Metagenomics/nf-core_ampliseq/nfcore_output/run15/ \
+-resume new_tmp_uge
 
 #-name noAncom
 #-resume distraught_watson
