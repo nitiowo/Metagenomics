@@ -3,6 +3,7 @@ library(argparser, quietly=TRUE)
 
 p <- arg_parser("DADA2 in R")
 
+# Defining arguments
 p = add_argument(p, "--RDS", help="Enter seqtabnochim RDS filepath", type='character')
 p = add_argument(p, "--refFile", help="Enter assignTaxonomy ref file", type='character')
 p = add_argument(p, "--spref", help="Enter addSpecies ref file", type='character')
@@ -12,6 +13,7 @@ p = add_argument(p, "--outprefix", help = "Enter output prefix for filenames", t
 
 argv <- parse_args(p)
 
+# Extracting argument values
 RDS_path = argv$RDS
 spref = argv$spref
 refDB = argv$refFile
@@ -19,15 +21,21 @@ outdir = argv$outdir
 outprefix = paste0(outdir, "/", argv$outprefix, "_")
 
 # Load in files
+print("Loading files")
 seqtab.nochim <- readRDS(RDS_path)
 otutab <- t(seqtab.nochim)
 
 # Assign taxonomy
+print("assignTaxonomy")
 taxa <- assignTaxonomy(seqtab.nochim, refDB, multithread=TRUE, tryRC=TRUE)
+
+print("addSpecies")
 taxa <- addSpecies(taxa, spref)
 
-write.table(taxa, file = paste0(outprefix,"/taxa.tsv"), quote=FALSE)
-saveRDS(taxa, paste0(outprefix,"/taxa.Rds"))
+# Writing outputs
+print("Writing outputs")
+write.table(taxa, file = paste0(outprefix,"taxa.tsv"), quote=FALSE)
+saveRDS(taxa, paste0(outprefix,"taxa.Rds"))
 
 # Create abundance table with tax assignments and counts - merged by ASVs (rownames)
 abundance <- merge(taxa, otutab, by = "row.names", all - TRUE)
