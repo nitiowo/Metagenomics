@@ -23,8 +23,8 @@ seqtab.nochim <- readRDS(RDS_path)
 otutab <- t(seqtab.nochim)
 
 # Assign taxonomy
-taxa <- assignTaxonomy(seqtab.nochim, paste0(refdir,refDB), multithread=TRUE, tryRC=TRUE)
-taxa <- addSpecies(taxa, paste0(refDB, spref))
+taxa <- assignTaxonomy(seqtab.nochim, refDB, multithread=TRUE, tryRC=TRUE)
+taxa <- addSpecies(taxa, spref)
 
 write.table(taxa, file = paste0(outprefix,"/taxa.tsv"), quote=FALSE)
 saveRDS(taxa, paste0(outprefix,"/taxa.Rds"))
