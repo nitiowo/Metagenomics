@@ -1,7 +1,7 @@
 #!/bin/bash
 #$ -pe smp 32
 #$ -q largemem
-#$ -N ampliseq_noAncom
+#$ -N ampliseq_newtmp
 #$ -o job_logs/
 #$ -e job_logs/
 #$ -M nvincen2@nd.edu
@@ -10,6 +10,10 @@
 # Load the nf-core software module
 conda activate nfcore-env
 # module load bio/nf-core
+
+# Set TMPDIR to a directory under /temp180, e.g. 
+export TMPDIR=/temp180/mpfrende/nvincen2/tmp
+mkdir -p $TMPDIR
 
 # Set the Singularity cache directory
 export NXF_SINGULARITY_CACHEDIR=/temp180/mpfrende/nvincen2/.singularity
@@ -21,7 +25,8 @@ nextflow run nf-core/ampliseq \
 -profile apptainer \
 -r 2.15.0 \
 -params-file /temp180/mpfrende/nvincen2/Metagenomics/nf-core_ampliseq/nfcore_scripts/ampliseq-nf-params.yml \
---outdir /temp180/mpfrende/nvincen2/Metagenomics/nf-core_ampliseq/nfcore_output/run12/ \
--resume noAncom
+--outdir /temp180/mpfrende/nvincen2/Metagenomics/nf-core_ampliseq/nfcore_output/run13/ \
+-name new_tmp
 
+#-name noAncom
 #-resume distraught_watson

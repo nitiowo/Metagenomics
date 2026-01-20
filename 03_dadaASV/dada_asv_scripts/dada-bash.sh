@@ -4,6 +4,8 @@
 #$ -q largemem
 #$ -pe smp 8
 #$ -N dada2_mICOint
+#$ -o job_logs/
+#$ -e job_logs/
 
 conda activate dada2-env
 

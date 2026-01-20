@@ -18,7 +18,7 @@
 ##     Path to tab-separated sample sheet
 ##     Type: string
 ## -----------------------------------------------------------------------------
-input: /temp180/mpfrende/nvincen2/Metagenomics/02_cutadapt/demux_out/01c_rescue/mICOintF/no75-87-88_mICOintF_samplesheet.tsv
+input: /temp180/mpfrende/nvincen2/Metagenomics/02_cutadapt/demux_out/02c_rescue/mICOintF/no75-87-88_mICOintF_samplesheet.tsv
 
 ## -----------------------------------------------------------------------------
 ## input_fasta
