@@ -1,5 +1,5 @@
 # This is inspired by https://benjjneb.github.io/dada2/tutorial_1_8.html
-# Usage: dada2_ASV.R --input </inputdir/path> --output </outputdir/path> --outprefix "prefix"
+# Usage: dada2_asv.R --input </inputdir/path> --output </outputdir/path> --outprefix "prefix"
 
 # if (!requireNamespace("BiocManager", quietly = TRUE))
 #   install.packages("BiocManager")
@@ -170,12 +170,5 @@ rownames(track) <- sample.names
 head(track)
 write.table(track, paste0(outprefix, "track_reads.txt"), sep = "\t", quote = FALSE)
 
-# Create abundance table with tax assignments and counts - merged by ASVs (rownames)
-abundance <- merge(tax_info, otutab, by = "row.names", all - TRUE)
-write.csv(abundance, file = paste0(outprefix, "abundance.csv"), quote = FALSE)
-
-# The following line replaces any instances of NNNNNNNNNN with nothing
-# Use this if paired reads didn't merge in dada2, and you used justConcatenate = TRUE
-# abundance$Row.names <- gsub("NNNNNNNNNN", "", abundance$Row.names)
 
 

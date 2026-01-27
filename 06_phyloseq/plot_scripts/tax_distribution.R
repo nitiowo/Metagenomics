@@ -24,7 +24,7 @@ outdir <- "/Volumes/Samsung_1TB/Zooplankton/Metagenomics/06_phyloseq/plots/taxon
 
 ####################################################################
 
-# Importing data ----
+# Importing data (skip to loading ps objects if already created) ----
 
 ####################################################################
 
@@ -123,13 +123,13 @@ saveRDS(ps, file = paste0("/Volumes/Samsung_1TB/Zooplankton/Metagenomics/06_phyl
 
 ####################################################################
 
-orig_ps <- readRDS("/Volumes/Samsung_1TB/Zooplankton/Metagenomics/06_phyloseq/ps_objects/Leray_dadaOriginal.RDS")
+orig_ps <- readRDS("/Volumes/Samsung_1TB/Zooplankton/Metagenomics/06_phyloseq/ps_output/mICOintF/mICOintF_ps.RDS")
 ps <- orig_ps
 
-outdir <- "/Volumes/Samsung_1TB/Zooplankton/Metagenomics/06_phyloseq/plots/tax_distribution/"
+outdir <- "/Volumes/Samsung_1TB/Zooplankton/Metagenomics/06_phyloseq/ps_output/"
 
 marker <- "Leray" # Only works with no slash at the end
-markerdir <- paste0(outdir, marker)
+markerdir <- paste0(outdir, marker, "/tax_profile")
 dir.create(markerdir, recursive = TRUE)
 
 
@@ -271,7 +271,7 @@ tax_plot <- function(ps, top_x, group_variables,levels,
 # tax_subsets <- c("unfiltered", "noRotifer", "noBenthic", "noRotifer_noBenthic", "onlyRotifer", "onlyBenthic")
 
 top_xs <- c(10, 20, 40, "all")
-groups <- c("Mesh")
+groups <- c("Mesh", "Lake", "Morph_avail")
 ranks <- c("ASV","Species","Genus", "Family", "Order", "Class")
 tax_subsets <- c("unfiltered", "noBenthic", "noRotifer", "noRotifer_noBenthic")
 
