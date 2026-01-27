@@ -1,11 +1,13 @@
 #!/bin/bash
 #$ -M nvincen2@nd.edu
 #$ -m abe
-#$ -q long
+#$ -q largemem
 #$ -pe smp 8
 #$ -N QC_all
+#$ -o job_logs/
+#$ -e job_logs/
 
-conda activate fastqc-env
+conda activate multiqc-env
 
 bash fastQC.sh
 
