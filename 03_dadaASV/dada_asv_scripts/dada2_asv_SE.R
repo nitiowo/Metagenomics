@@ -40,7 +40,7 @@ dir.create(outdir)
 # Setting naming convention for F/R input fastq files
 ######################################################################################################
 fnFs <- sort(list.files(path, pattern = "_R1.fastq.gz", full.names = TRUE))
-fnRs <- sort(list.files(path, pattern = "_R2.fastq.gz", full.names = TRUE))
+# fnRs <- sort(list.files(path, pattern = "_R2.fastq.gz", full.names = TRUE))
 
 sample.names <- sapply(strsplit(basename(fnFs), "_"), 
                        function(x) paste0("Z", x[1]))  # This part adds "Z" in front of each sample number
@@ -57,24 +57,23 @@ pdf(paste0(outprefix, "dada2_plotQualityProfile_fwd.pdf"), onefile = TRUE)
 plotQualityProfile(fnFs[1:2])
 dev.off()
 
-pdf(paste0(outprefix, "dada2_plotQualityProfile_rev.pdf"), onefile = TRUE)
-plotQualityProfile(fnRs[1:2])
-dev.off()
+# pdf(paste0(outprefix, "dada2_plotQualityProfile_rev.pdf"), onefile = TRUE)
+# plotQualityProfile(fnRs[1:2])
+# dev.off()
 
 #############################################################
 # Perform filtering and trimming on forward and reverse reads
 ##############################################################
 # Place under filtered subdirectory
 filtFs <- file.path(path, "filtered", paste0(sample.names, "_F_filt.fastq.gz"))
-filtRs <- file.path(path, "filtered", paste0(sample.names, "_R_filt.fastq.gz"))
+# filtRs <- file.path(path, "filtered", paste0(sample.names, "_R_filt.fastq.gz"))
 names(filtFs) <- sample.names
-names(filtRs) <- sample.names
+# names(filtRs) <- sample.names
 
 # Modify and add new parameter based on your data.
-out <- filterAndTrim(fnFs, filtFs, fnRs, filtRs, 
-                     truncLen = c(276,200), maxN = 0, maxEE = c(2,2), 
-                     # truncQ = 5, truncQ not recommended
-                     rm.phix = TRUE, compress = TRUE, multithread = TRUE, minLen = 40)
+out <- filterAndTrim(fnFs, filtFs, truncLen = 270, maxN = 0, maxEE = 2, 
+                     #truncQ=5, truncQ not recommended
+                     rm.phix = TRUE, compress = TRUE, multithread = TRUE)
 
 
 # Examine quality profiles of filtered reads
@@ -82,43 +81,44 @@ pdf(paste0(outprefix, "QualityProfile.filt_plot_fwd.pdf"), onefile = T)
 plotQualityProfile(filtFs[1:2])
 dev.off()
 
-pdf(paste0(outprefix, "QualityProfile.filt_plot_rev.pdf"), onefile = T)
-plotQualityProfile(filtRs[1:2])
-dev.off()
+# pdf(paste0(outprefix, "QualityProfile.filt_plot_rev.pdf"), onefile = T)
+# plotQualityProfile(filtRs[1:2])
+# dev.off()
 
 #####################################################
 # Learn the Error Rates for forward and reverse reads
 #####################################################
 
-errF <- learnErrors(filtFs, multithread=TRUE)
+errF <- learnErrors(filtFs, multithread = TRUE)
 
-errR <- learnErrors(filtRs, multithread=TRUE)
+# errR <- learnErrors(filtRs, multithread = TRUE)
 
 # Plot estimated error as sanity check
 pdf(paste0(outprefix, "ErrorsRates_F.pdf"), onefile = TRUE)
 plotErrors(errF, nominalQ = TRUE)
 dev.off()
 
-pdf(paste0(outprefix, "ErrorsRates_R.pdf"), onefile = TRUE)
-plotErrors(errR, nominalQ = TRUE)
-dev.off()
+# pdf(paste0(outprefix, "ErrorsRates_R.pdf"), onefile = TRUE)
+# plotErrors(errR, nominalQ = TRUE)
+# dev.off()
 
 
 ################
 # Dereplication
 ################
 derepFs <- derepFastq(filtFs, verbose = TRUE)
-derepRs <- derepFastq(filtRs, verbose = TRUE)
+# derepRs <- derepFastq(filtRs, verbose = TRUE)
+
 # Name the derep-class objects by the sample names
 names(derepFs) <- sample.names
-names(derepRs) <- sample.names
+# names(derepRs) <- sample.names
 
 
 ###################
 # Sample Inference
 ###################
 dadaFs <- dada(derepFs, err = errF, multithread = TRUE)
-dadaRs <- dada(derepRs, err = errR, multithread = TRUE)
+# dadaRs <- dada(derepRs, err = errR, multithread = TRUE)
 
 
 ####################
@@ -128,7 +128,7 @@ dadaRs <- dada(derepRs, err = errR, multithread = TRUE)
 # If not, try justConcatenate = TRUE (This just joins the two reads with 10 Ns in between). You can remove the Ns later
 # But the recommended method is to just use forward reads
 
-mergers <- mergePairs(dadaFs, derepFs, dadaRs, derepRs, verbose = TRUE)
+# mergers <- mergePairs(dadaFs, derepFs, dadaRs, derepRs, verbose = TRUE)
 
 # Inspect the merger data.frame from the first sample
 # head(mergers[[1]])
@@ -138,7 +138,7 @@ mergers <- mergePairs(dadaFs, derepFs, dadaRs, derepRs, verbose = TRUE)
 # Construct sequence table
 ###########################
 
-seqtab <- makeSequenceTable(mergers)
+seqtab <- makeSequenceTable(dadaFs)
 ## Get dimensions
 # dim(seqtab)
 
@@ -171,11 +171,11 @@ write.table(otutab, file = paste0(outprefix, "otutab.tsv"), quote = FALSE)
 # Track reads through the pipeline
 #################################
 getN <- function(x) sum(getUniques(x))
-track <- cbind(out, sapply(dadaFs, getN), sapply(dadaRs, getN), 
-               sapply(mergers, getN), rowSums(seqtab.nochim))
+
+track <- cbind(out, sapply(dadaFs, getN), rowSums(seqtab.nochim))
 track <- cbind(track, (track[,ncol(track)]/track[,1])*100)
-# If processing a single sample, remove the sapply calls: e.g. replace sapply(dadaFs, getN) with getN(dadaFs)
-colnames(track) <- c("input", "filtered", "denoisedF", "denoisedR", "merged", "nonchim", "%_reads_remaining")
+
+colnames(track) <- c("input", "filtered", "denoisedF", "nonchim", "%_reads_remaining")
 rownames(track) <- sample.names
 head(track)
-write.table(track, paste0(outprefix, "track_reads.txt"), sep = "\t", quote = FALSE)
+write.table(track, paste0(outprefix, "track_reads.txt"), sep = "\t",quote = FALSE)
