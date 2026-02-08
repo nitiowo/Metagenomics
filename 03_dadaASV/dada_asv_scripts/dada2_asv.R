@@ -25,14 +25,16 @@ outdir = argv$output
 outprefix = paste0(outdir, "/", argv$outprefix, "_")
 
 # INTERACTIVE MODE
-# path = '/Volumes/Seagate_2/Bioinformatics/Zooplankton/zoop_backup/subset/cutadapt/cutadapt_demux/mICOint'
-# outdir = '/Volumes/Seagate_2/Bioinformatics/Zooplankton/zoop_backup/subset/cutadapt/cutadapt_demux/mICOint/dada_output/'
-# outprefix = "mICOint"
+# path = '/Volumes/Samsung_1TB/Zooplankton/Metagenomics/02_cutadapt/02c_rescue_demux/02c_rescue_demux_output/subsets/SSUF_subset'
+# outdir = '/Volumes/Samsung_1TB/Zooplankton/Metagenomics/03_dadaASV/dada_asv_output/SSUF_subset'
+# outprefix = "SSU_18S"
+# outprefix = paste0(outdir, "/", outprefix, "_")
 
 files <- list.files(path)
 fastqs <- files[grepl(".fastq.gz$", files)] # gz
 # fastq_files <- files[grepl(".fastq", files)]
 
+dir.create(outdir)
 
 ######################################################################################################
 # Setting naming convention for F/R input fastq files
@@ -51,11 +53,13 @@ sample.names <- sapply(strsplit(basename(fnFs), "_"),
 ####################################################################
 # Visualizing the quality profiles of the forward and reverse reads
 ####################################################################
-pdf(paste0(outprefix, "dada2_plotQualityProfile.pdf"), onefile = TRUE)
+pdf(paste0(outprefix, "dada2_plotQualityProfile_fwd.pdf"), onefile = TRUE)
 plotQualityProfile(fnFs[1:2])
-plotQualityProfile(fnRs[1:2])
 dev.off()
 
+pdf(paste0(outprefix, "dada2_plotQualityProfile_rev.pdf"), onefile = TRUE)
+plotQualityProfile(fnRs[1:2])
+dev.off()
 
 #############################################################
 # Perform filtering and trimming on forward and reverse reads
@@ -68,16 +72,19 @@ names(filtRs) <- sample.names
 
 # Modify and add new parameter based on your data.
 out <- filterAndTrim(fnFs, filtFs, fnRs, filtRs, 
-                     truncLen = c(272,218), maxN = 0, maxEE = c(2,3), truncQ = 5, 
+                     truncLen = c(276,200), maxN = 0, maxEE = c(2,2), 
+                     # truncQ = 5, truncQ not recommended
                      rm.phix = TRUE, compress = TRUE, multithread = TRUE, minLen = 40)
 
 
 # Examine quality profiles of filtered reads
-pdf(paste0(outprefix, "QualityProfile.filt_plot.pdf"), onefile = T)
+pdf(paste0(outprefix, "QualityProfile.filt_plot_fwd.pdf"), onefile = T)
 plotQualityProfile(filtFs[1:2])
-plotQualityProfile(filtRs[1:2])
 dev.off()
 
+pdf(paste0(outprefix, "QualityProfile.filt_plot_rev.pdf"), onefile = T)
+plotQualityProfile(filtRs[1:2])
+dev.off()
 
 #####################################################
 # Learn the Error Rates for forward and reverse reads
@@ -118,8 +125,8 @@ dadaRs <- dada(derepRs, err = errR, multithread = TRUE)
 # Merge paired reads
 ####################
 # Make sure your amplicon length allows 20+ bp of overlap between F and R reads
-# If not, try justConcatenate = TRUE (This just joins the two reads with 10 Ns in between). Code to remove the Ns is provided below.
-# Or just use forward reads
+# If not, try justConcatenate = TRUE (This just joins the two reads with 10 Ns in between). You can remove the Ns later
+# But the recommended method is to just use forward reads
 
 mergers <- mergePairs(dadaFs, derepFs, dadaRs, derepRs, verbose = TRUE)
 
@@ -147,6 +154,7 @@ seqtab.nochim <- removeBimeraDenovo(seqtab, method = "consensus",
 # dim(seqtab.nochim)
 # sum(seqtab.nochim)/sum(seqtab)
 
+
 #################
 #Save into Rds
 #################
@@ -163,12 +171,11 @@ write.table(otutab, file = paste0(outprefix, "otutab.tsv"), quote = FALSE)
 # Track reads through the pipeline
 #################################
 getN <- function(x) sum(getUniques(x))
-track <- cbind(out, sapply(dadaFs, getN), sapply(dadaRs, getN), sapply(mergers, getN), rowSums(seqtab.nochim))
+track <- cbind(out, sapply(dadaFs, getN), sapply(dadaRs, getN), 
+               sapply(mergers, getN), rowSums(seqtab.nochim))
+track <- cbind(track, (track[,ncol(track)]/track[,1])*100)
 # If processing a single sample, remove the sapply calls: e.g. replace sapply(dadaFs, getN) with getN(dadaFs)
-colnames(track) <- c("input", "filtered", "denoisedF", "denoisedR", "merged", "nonchim")
+colnames(track) <- c("input", "filtered", "denoisedF", "denoisedR", "merged", "nonchim", "%_reads_remaining")
 rownames(track) <- sample.names
 head(track)
 write.table(track, paste0(outprefix, "track_reads.txt"), sep = "\t", quote = FALSE)
-
-
-
