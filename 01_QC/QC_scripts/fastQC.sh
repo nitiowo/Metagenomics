@@ -10,7 +10,7 @@ mkdir -p ../fastqc_output
 RAW_DIR=$(cat ../../00_prep/raw_dir.txt )
 
 # Run fastqc on every file in raw data directory
-fastqc "$RAW_DIR"/* -o ../fastqc_output/
+fastqc $RAW_DIR/* -o ../fastqc_output/
 
 # Deactivate fastqc
 # conda deactivate if necessary

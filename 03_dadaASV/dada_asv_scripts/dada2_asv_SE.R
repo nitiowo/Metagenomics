@@ -71,7 +71,7 @@ names(filtFs) <- sample.names
 # names(filtRs) <- sample.names
 
 # Modify and add new parameter based on your data.
-out <- filterAndTrim(fnFs, filtFs, truncLen = 270, maxN = 0, maxEE = 2, 
+out <- filterAndTrim(fnFs, filtFs, truncLen = 273, maxN = 0, maxEE = 3, 
                      #truncQ=5, truncQ not recommended
                      rm.phix = TRUE, compress = TRUE, multithread = TRUE)
 
