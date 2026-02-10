@@ -8,9 +8,9 @@
 
 # R files #
 ###########
-**/*Rds
-**/*rds
-**/*RDS
+**/*.Rds
+**/*.rds
+**/*.RDS
 **/*Rhistory
 **/*RData
 .Rproj.user

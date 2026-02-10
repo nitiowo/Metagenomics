@@ -1,0 +1,1354 @@
+---
+title: "Great Lakes Zooplankton Metabarcoding Analysis"
+author: "nitiowo"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    toc: true
+    toc_depth: 4
+    toc_float:
+      collapsed: true
+      smooth_scroll: true
+    number_sections: true
+    theme: flatly
+    code_folding: hide
+    fig_width: 12
+    fig_height: 8
+    df_print: paged
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo       = TRUE,
+  warning    = FALSE,
+  message    = FALSE,
+  fig.width  = 12,
+  fig.height = 8,
+  dpi        = 150,
+  cache      = TRUE,
+  cache.lazy = FALSE
+)
+```
+
+# Setup and Configuration
+
+## Install and Load Packages
+
+```{r install-packages, eval=FALSE}
+# ── Run this chunk ONCE to install all dependencies ──
+if (!requireNamespace("BiocManager", quietly = TRUE))
+  install.packages("BiocManager")
+
+bioc_pkgs <- c("phyloseq", "microbiome", "ANCOMBC", "ggtree",
+               "DECIPHER", "Biostrings", "msa")
+cran_pkgs <- c(
+  "tidyverse", "vegan", "ape", "phangorn",
+  "ggplot2", "patchwork", "RColorBrewer", "viridis",
+  "ggrepel", "ggpubr",
+  "VennDiagram", "UpSetR", "eulerr",
+  "indicspecies", "adespatial", "geosphere",
+  "sf", "rnaturalearth", "rnaturalearthdata",
+  "reshape2", "broom", "knitr", "kableExtra",
+  "DT", "iNEXT",
+  "occumb", "pheatmap"
+)
+
+for (pkg in bioc_pkgs) {
+  if (!requireNamespace(pkg, quietly = TRUE))
+    BiocManager::install(pkg, update = FALSE, ask = FALSE)
+}
+for (pkg in cran_pkgs) {
+  if (!requireNamespace(pkg, quietly = TRUE))
+    install.packages(pkg)
+}
+```
+
+```{r load-packages}
+library(phyloseq)
+library(microbiome)
+library(tidyverse)
+library(vegan)
+library(ape)
+library(phangorn)
+library(ggplot2)
+library(patchwork)
+library(RColorBrewer)
+library(viridis)
+library(ggrepel)
+library(ggpubr)
+library(VennDiagram)
+library(UpSetR)
+library(eulerr)
+library(indicspecies)
+library(adespatial)
+library(geosphere)
+library(sf)
+library(rnaturalearth)
+library(rnaturalearthdata)
+library(reshape2)
+library(knitr)
+library(kableExtra)
+library(DT)
+library(iNEXT)
+#library(ANCOMBC)
+library(ggtree)
+library(DECIPHER)
+library(Biostrings)
+library(pheatmap)
+
+set.seed(42)
+```
+
+## ★ Master Configuration
+
+**Change parameters here to control every downstream analysis and plot.**
+All sections read from these variables, so changing one value propagates everywhere.
+
+```{r global-config}
+# =============================================================================
+#
+#  ★★★  MASTER CONFIGURATION  ★★★
+#
+#  Change these values to instantly re-run the entire document with different
+#  settings.  Each parameter is used throughout the notebook.
+#
+# =============================================================================
+
+# ── Lake ordering (West → East) ──
+lake_order <- c("Superior", "Michigan", "Huron", "Erie", "Ontario")
+
+# ── Consistent colour palettes (used in EVERY plot) ──
+lake_colors <- c(
+  "Superior" = "#1b9e77",
+  "Michigan" = "#d95f02",
+  "Huron"    = "#7570b3",
+  "Erie"     = "#e7298a",
+  "Ontario"  = "#66a61e"
+)
+
+marker_colors <- c(
+  "Folmer"     = "#e41a1c",
+  "Leray"      = "#377eb8",
+  "18S"        = "#4daf4a",
+  "Morphology" = "#984ea3"
+)
+
+# ── Taxonomic ranks (must match your tax_table columns) ──
+tax_ranks <- c("Kingdom", "Phylum", "Class", "Order",
+               "Family", "Genus", "Species")
+
+# ── Default analysis rank ──
+# Options: "ASV", or any element of tax_ranks
+analysis_rank <- "Species"
+
+# ── Which markers to include in the current run ──
+# Subset this vector to restrict analyses to fewer markers
+active_markers <- c("Folmer", "Leray", "18S")
+# Set TRUE to also include morphological data where applicable
+include_morph <- TRUE
+
+# ── Primary comparison variable ──
+# Options: "Lake", "Station_ID", or any metadata column
+comparison_var <- "Lake"
+
+# ── Taxa subsetting ──
+# Set to NULL to use all taxa, or use a list to filter:
+#   list(rank = "Phylum",  include = "Rotifera")
+#   list(rank = "Phylum",  exclude = "Rotifera")
+#   list(rank = "Order",   include = "Calanoida")
+#   list(rank = "Class",   include = c("Copepoda", "Branchiopoda"))
+taxa_subset <- NULL
+
+# ── Distance metrics ──
+pa_distance    <- "jaccard"   # presence/absence comparisons
+abund_distance <- "bray"      # abundance comparisons
+
+# ── Alpha diversity metrics (Shannon excluded as requested) ──
+# Observed = richness (P/A); InvSimpson = abundance-weighted
+alpha_metrics <- c("Observed", "InvSimpson")
+
+# ── Focal taxon for taxon-specific deep-dive (Section 13) ──
+focal_taxon_rank <- "Order"
+focal_taxon_name <- "Calanoida"
+
+# ── ANCOM-BC2 settings ──
+ancom_prevalence_threshold <- 0.10   # minimum fraction of samples a taxon
+                                     # must appear in
+
+# ── Plot aesthetics ──
+base_point_size <- 2.5
+base_text_size  <- 10
+top_n_barplot   <- 15     # number of named taxa in barplots before "Other"
+top_n_heatmap   <- 30     # number of taxa in heatmaps
+```
+
+## Load Data
+
+```{r load-data}
+# Phyloseq objects in the same directory as this .Rmd
+ps_folmer <- readRDS("ps_folmer.rds")
+ps_leray  <- readRDS("ps_leray.rds")
+ps_18S    <- readRDS("ps_18S.rds")
+ps_morph  <- readRDS("ps_morph.rds")
+
+cat("=== Folmer ===\n")
+cat("  Samples:", nsamples(ps_folmer), " | ASVs:", ntaxa(ps_folmer), "\n")
+cat("=== Leray ===\n")
+cat("  Samples:", nsamples(ps_leray),  " | ASVs:", ntaxa(ps_leray), "\n")
+cat("=== 18S ===\n")
+cat("  Samples:", nsamples(ps_18S),    " | ASVs:", ntaxa(ps_18S), "\n")
+cat("=== Morphology ===\n")
+cat("  Samples:", nsamples(ps_morph),  " | Taxa:", ntaxa(ps_morph), "\n")
+```
+
+## Helper Functions
+
+```{r helper-functions}
+# ─────────────────────────────────────────────────
+#  Utility functions used throughout the document
+# ─────────────────────────────────────────────────
+
+# Set Lake as ordered factor (West → East) + Mesh as factor
+set_lake_order <- function(ps) {
+  sd <- data.frame(sample_data(ps))
+  sd$Lake <- factor(sd$Lake, levels = lake_order, ordered = TRUE)
+  if ("Mesh" %in% colnames(sd)) sd$Mesh <- factor(sd$Mesh)
+  sample_data(ps) <- sample_data(sd)
+  return(ps)
+}
+
+# Agglomerate to a taxonomic rank; "ASV" = no agglomeration
+agg_rank <- function(ps, rank = analysis_rank) {
+  if (rank == "ASV") return(ps)
+  tax_glom(ps, taxrank = rank, NArm = FALSE)
+}
+
+# Convert to presence / absence
+to_pa <- function(ps) {
+  ot <- as(otu_table(ps), "matrix")
+  ot[ot > 0] <- 1
+  otu_table(ps) <- otu_table(ot, taxa_are_rows = taxa_are_rows(ps))
+  return(ps)
+}
+
+# Subset taxa by the global `taxa_subset` config (or a supplied list)
+subset_taxa_custom <- function(ps, tsub = taxa_subset) {
+  if (is.null(tsub)) return(ps)
+  tt <- data.frame(tax_table(ps), stringsAsFactors = FALSE)
+  rc <- tsub$rank
+  if (!is.null(tsub$include)) {
+    keep <- which(tt[[rc]] %in% tsub$include)
+    ps <- prune_taxa(taxa_names(ps)[keep], ps)
+  }
+  if (!is.null(tsub$exclude)) {
+    keep <- which(!(tt[[rc]] %in% tsub$exclude))
+    ps <- prune_taxa(taxa_names(ps)[keep], ps)
+  }
+  ps <- prune_samples(sample_sums(ps) > 0, ps)
+  return(ps)
+}
+
+# One-step "prepare" wrapper
+prepare_ps <- function(ps, rank = analysis_rank, tsub = taxa_subset) {
+  ps %>% agg_rank(rank) %>% subset_taxa_custom(tsub)
+}
+
+# Morph-available sample names
+morph_samples <- sample_names(ps_morph)
+
+# Subset any ps to only morph-available samples
+subset_to_morph <- function(ps) {
+
+  shared <- intersect(sample_names(ps), morph_samples)
+  prune_samples(shared, ps)
+}
+
+# Get nice taxon labels
+taxon_label <- function(ps, rank) {
+  tt <- data.frame(tax_table(ps), stringsAsFactors = FALSE)
+  labs <- tt[[rank]]
+  labs[is.na(labs)] <- paste0("Unknown_", taxa_names(ps)[is.na(labs)])
+  return(labs)
+}
+
+# ── Apply lake ordering to all objects ──
+ps_folmer <- set_lake_order(ps_folmer)
+ps_leray  <- set_lake_order(ps_leray)
+ps_18S    <- set_lake_order(ps_18S)
+ps_morph  <- set_lake_order(ps_morph)
+
+# Named list of marker objects
+ps_list <- list(Folmer = ps_folmer, Leray = ps_leray, `18S` = ps_18S)
+
+# Full list including morphology
+ps_list_all <- c(ps_list, list(Morphology = ps_morph))
+
+# Subset to active markers as set in config
+ps_active      <- ps_list[active_markers]
+ps_active_all  <- if (include_morph) c(ps_active, list(Morphology = ps_morph)) else ps_active
+```
+
+## Combine Marker Data (Presence/Absence)
+
+```{r combine-markers}
+# Combine multiple phyloseq objects into a single P/A matrix at a given rank.
+# Only shared samples are kept.  If morph_only = TRUE, restrict to morph samples.
+combine_ps_pa <- function(ps_list, rank = "Species", morph_only = FALSE) {
+
+  ps_prepped <- lapply(ps_list, function(ps) {
+    ps <- agg_rank(ps, rank)
+    ps <- to_pa(ps)
+    if (morph_only) ps <- subset_to_morph(ps)
+    ps
+  })
+
+  # Taxon identifiers at the chosen rank
+  get_ids <- function(ps) {
+    if (rank == "ASV") return(taxa_names(ps))
+    tt <- data.frame(tax_table(ps), stringsAsFactors = FALSE)
+    ids <- tt[[rank]]
+    ids[is.na(ids)] <- paste0("Unassigned_", seq_along(ids[is.na(ids)]))
+    ids
+  }
+
+  all_taxa    <- unique(unlist(lapply(ps_prepped, get_ids)))
+  all_samples <- Reduce(intersect, lapply(ps_prepped, sample_names))
+
+  mat <- matrix(0L, nrow = length(all_taxa), ncol = length(all_samples),
+                dimnames = list(all_taxa, all_samples))
+
+  for (ps in ps_prepped) {
+    otu <- as(otu_table(ps), "matrix")
+    if (!taxa_are_rows(ps)) otu <- t(otu)
+    ids <- get_ids(ps)
+    for (i in seq_along(ids)) {
+      tid <- ids[i]
+      shared_s <- intersect(colnames(otu), all_samples)
+      mat[tid, shared_s] <- pmax(mat[tid, shared_s], as.integer(otu[i, shared_s] > 0))
+    }
+  }
+
+  mat <- mat[rowSums(mat) > 0, , drop = FALSE]
+
+  sd <- sample_data(ps_prepped[[1]])
+  sd <- sd[all_samples, ]
+
+  tax_mat <- matrix(rownames(mat), ncol = 1,
+                    dimnames = list(rownames(mat), rank))
+
+  phyloseq(otu_table(mat, taxa_are_rows = TRUE),
+           sample_data(sd),
+           tax_table(tax_mat))
+}
+
+# All markers combined (shared samples, P/A)
+ps_markers_combined <- combine_ps_pa(ps_list, rank = "Species")
+
+# All markers + morphology (morph samples only, P/A)
+ps_all_combined <- combine_ps_pa(ps_list_all, rank = "Species", morph_only = TRUE)
+
+cat("Combined markers:       ", ntaxa(ps_markers_combined), "taxa ×",
+    nsamples(ps_markers_combined), "samples\n")
+cat("Combined + morphology:  ", ntaxa(ps_all_combined), "taxa ×",
+    nsamples(ps_all_combined), "samples\n")
+```
+
+---
+
+# Overall Biodiversity Barplots {.tabset}
+
+## Barplot Function
+
+```{r barplot-function}
+plot_composition_bar <- function(ps, rank = "Phylum",
+                                  facet_var = NULL,
+                                  title = "",
+                                  top_n = top_n_barplot) {
+
+  ps_agg <- agg_rank(ps, rank)
+  ps_agg <- subset_taxa_custom(ps_agg)
+  ps_rel <- transform_sample_counts(ps_agg, function(x) x / sum(x))
+
+  df <- psmelt(ps_rel)
+  df$Lake <- factor(df$Lake, levels = lake_order, ordered = TRUE)
+
+  # Identify top‑N taxa by total relative abundance
+  top_taxa <- df %>%
+    group_by(.data[[rank]]) %>%
+    summarise(total = sum(Abundance, na.rm = TRUE), .groups = "drop") %>%
+    arrange(desc(total)) %>%
+    slice_head(n = top_n) %>%
+    pull(.data[[rank]])
+
+  df[[rank]] <- if_else(df[[rank]] %in% top_taxa,
+                        as.character(df[[rank]]), "Other")
+  df[[rank]] <- factor(df[[rank]], levels = c(as.character(top_taxa), "Other"))
+
+  fill_pal <- c(colorRampPalette(brewer.pal(12, "Set3"))(top_n), "grey70")
+  names(fill_pal) <- levels(df[[rank]])
+
+  p <- ggplot(df, aes(x = Sample, y = Abundance, fill = .data[[rank]])) +
+    geom_bar(stat = "identity", position = "stack", width = 1) +
+    scale_fill_manual(values = fill_pal) +
+    theme_minimal(base_size = base_text_size) +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1, size = 5),
+          legend.position = "right") +
+    labs(title = title, y = "Relative Abundance", x = "")
+
+  if (!is.null(facet_var))
+    p <- p + facet_wrap(as.formula(paste("~", facet_var)),
+                        scales = "free_x", nrow = 1)
+  p
+}
+```
+
+## Phylum Level
+
+```{r barplots-phylum, fig.height=14, fig.width=18}
+bar_phylum <- imap(ps_active_all, ~ plot_composition_bar(
+  .x, rank = "Phylum", title = paste(.y, "— Phylum Level")))
+
+wrap_plots(bar_phylum, ncol = 1) +
+  plot_annotation(title = "Community Composition — Phylum Level")
+```
+
+```{r barplots-phylum-lake, fig.height=18, fig.width=20}
+bar_phylum_lake <- imap(ps_active_all, ~ plot_composition_bar(
+  .x, rank = "Phylum", facet_var = "Lake",
+  title = paste(.y, "— Phylum by Lake")))
+
+wrap_plots(bar_phylum_lake, ncol = 1) +
+  plot_annotation(title = "Community Composition — Phylum Level — Faceted by Lake")
+```
+
+## Order Level
+
+```{r barplots-order, fig.height=14, fig.width=18}
+bar_order <- imap(ps_active_all, ~ plot_composition_bar(
+  .x, rank = "Order", top_n = 20,
+  title = paste(.y, "— Order Level")))
+
+wrap_plots(bar_order, ncol = 1) +
+  plot_annotation(title = "Community Composition — Order Level")
+```
+
+```{r barplots-order-lake, fig.height=18, fig.width=20}
+bar_order_lake <- imap(ps_active_all, ~ plot_composition_bar(
+  .x, rank = "Order", facet_var = "Lake", top_n = 20,
+  title = paste(.y, "— Order by Lake")))
+
+wrap_plots(bar_order_lake, ncol = 1) +
+  plot_annotation(title = "Community Composition — Order Level — Faceted by Lake")
+```
+
+## Family Level
+
+```{r barplots-family, fig.height=14, fig.width=18}
+bar_family <- imap(ps_active_all, ~ plot_composition_bar(
+  .x, rank = "Family", top_n = 20,
+  title = paste(.y, "— Family Level")))
+
+wrap_plots(bar_family, ncol = 1) +
+  plot_annotation(title = "Community Composition — Family Level")
+```
+
+## Genus Level
+
+```{r barplots-genus, fig.height=14, fig.width=18}
+bar_genus <- imap(ps_active_all, ~ plot_composition_bar(
+  .x, rank = "Genus", top_n = 20,
+  title = paste(.y, "— Genus Level")))
+
+wrap_plots(bar_genus, ncol = 1) +
+  plot_annotation(title = "Community Composition — Genus Level")
+```
+
+---
+
+# Rarefaction & Accumulation Curves
+
+```{r rarefaction, fig.height=10, fig.width=16}
+run_inext <- function(ps) {
+  otu <- as(otu_table(ps), "matrix")
+  if (!taxa_are_rows(ps)) otu <- t(otu)
+  iNEXT(as.list(data.frame(otu)), q = 0,
+        datatype = "abundance", nboot = 50)
+}
+
+cat("Running iNEXT (may take a few minutes)…\n")
+inext_results <- imap(ps_active_all, function(ps, m) {
+  cat("  •", m, "\n"); run_inext(ps)
+})
+
+rarefaction_plots <- imap(inext_results, ~ {
+  ggiNEXT(.x, type = 1) +
+    theme_minimal(base_size = base_text_size) +
+    labs(title = paste(.y, "— Rarefaction")) +
+    theme(legend.position = "none")
+})
+
+wrap_plots(rarefaction_plots, ncol = 2) +
+  plot_annotation(title = "Sample‑Level Rarefaction Curves")
+```
+
+---
+
+# Alpha Diversity {.tabset}
+
+## Compute Alpha Diversity
+
+```{r alpha-compute}
+compute_alpha <- function(ps, marker_name, metrics = alpha_metrics) {
+  ad <- estimate_richness(ps, measures = metrics)
+  ad$Sample_ID <- sample_names(ps)
+  ad$Marker    <- marker_name
+  meta <- data.frame(sample_data(ps))
+  meta$Sample_ID <- rownames(meta)
+  ad <- left_join(ad, meta, by = "Sample_ID")
+  ad$Lake <- factor(ad$Lake, levels = lake_order, ordered = TRUE)
+  ad
+}
+
+alpha_all <- bind_rows(imap(ps_active_all, ~ compute_alpha(.x, .y)))
+
+alpha_long <- alpha_all %>%
+  pivot_longer(cols = all_of(alpha_metrics),
+               names_to = "Metric", values_to = "Value")
+
+alpha_summary <- alpha_all %>%
+  group_by(Marker, Lake) %>%
+  summarise(across(all_of(alpha_metrics),
+                   list(mean = mean, sd = sd), .names = "{.col}_{.fn}"),
+            n = n(), .groups = "drop")
+
+kable(alpha_summary, digits = 2,
+      caption = "Alpha Diversity Summary — by Marker × Lake") %>%
+  kable_styling(bootstrap_options = c("striped", "hover"))
+```
+
+## Between Markers (All Sites)
+
+```{r alpha-between-markers, fig.height=8, fig.width=12}
+# Kruskal-Wallis
+kw_markers <- alpha_long %>%
+  group_by(Metric) %>%
+  summarise(
+    H        = kruskal.test(Value ~ Marker)$statistic,
+    p_value  = kruskal.test(Value ~ Marker)$p.value,
+    .groups  = "drop")
+
+kable(kw_markers, digits = 4,
+      caption = "Kruskal‑Wallis — Alpha Diversity Between Markers") %>%
+  kable_styling()
+
+# Pairwise Wilcoxon
+pw_markers <- alpha_long %>%
+  group_by(Metric) %>%
+  reframe({
+    pw <- pairwise.wilcox.test(Value, Marker, p.adjust.method = "BH")
+    as.data.frame(pw$p.value) %>%
+      rownames_to_column("Group1") %>%
+      pivot_longer(-Group1, names_to = "Group2", values_to = "p.adj") %>%
+      filter(!is.na(p.adj))
+  })
+
+kable(pw_markers, digits = 4,
+      caption = "Pairwise Wilcoxon — Between Markers") %>%
+  kable_styling()
+
+ggplot(alpha_long, aes(x = Marker, y = Value, fill = Marker)) +
+  geom_boxplot(outlier.shape = NA, alpha = .7) +
+  geom_jitter(width = .2, alpha = .4, size = 1) +
+  facet_wrap(~ Metric, scales = "free_y") +
+  scale_fill_manual(values = marker_colors) +
+  theme_minimal(base_size = base_text_size) +
+  labs(title = "Alpha Diversity — Between Markers",
+       y = "Diversity Value") +
+  theme(legend.position = "bottom")
+```
+
+## Between Lakes (Within Each Marker)
+
+```{r alpha-between-lakes, fig.height=14, fig.width=16}
+kw_lakes <- alpha_long %>%
+  group_by(Marker, Metric) %>%
+  summarise(
+    H       = kruskal.test(Value ~ Lake)$statistic,
+    p_value = kruskal.test(Value ~ Lake)$p.value,
+    .groups = "drop")
+
+kable(kw_lakes, digits = 4,
+      caption = "Kruskal‑Wallis — Between Lakes (per Marker)") %>%
+  kable_styling()
+
+# Significant pairwise
+pw_lakes <- alpha_long %>%
+  group_by(Marker, Metric) %>%
+  reframe({
+    pw <- pairwise.wilcox.test(Value, Lake, p.adjust.method = "BH")
+    as.data.frame(pw$p.value) %>%
+      rownames_to_column("Group1") %>%
+      pivot_longer(-Group1, names_to = "Group2", values_to = "p.adj") %>%
+      filter(!is.na(p.adj))
+  })
+
+kable(pw_lakes %>% filter(p.adj < 0.05), digits = 4,
+      caption = "Significant Pairwise Comparisons — Lakes") %>%
+  kable_styling()
+
+ggplot(alpha_long, aes(x = Lake, y = Value, fill = Lake)) +
+  geom_boxplot(outlier.shape = NA, alpha = .7) +
+  geom_jitter(width = .2, alpha = .4, size = 1) +
+  facet_grid(Metric ~ Marker, scales = "free_y") +
+  scale_fill_manual(values = lake_colors) +
+  theme_minimal(base_size = base_text_size) +
+  labs(title = "Alpha Diversity — Between Lakes (per Marker)",
+       y = "Diversity Value") +
+  theme(legend.position = "bottom")
+```
+
+## Site‑Level Concordance Between Markers
+
+```{r alpha-concordance, fig.height=10, fig.width=14}
+alpha_wide <- alpha_all %>%
+  select(Sample_ID, Marker, Station_ID, Lake, all_of(alpha_metrics)) %>%
+  pivot_longer(cols = all_of(alpha_metrics),
+               names_to = "Metric", values_to = "Value") %>%
+  pivot_wider(names_from = Marker, values_from = Value)
+
+# Spearman correlations between every marker pair
+marker_pairs <- combn(names(ps_active_all), 2, simplify = FALSE)
+
+cor_table <- alpha_wide %>%
+  group_by(Metric) %>%
+  reframe({
+    map_dfr(marker_pairs, function(pr) {
+      vals <- cur_data() %>% select(all_of(pr)) %>% drop_na()
+      if (nrow(vals) < 5) return(NULL)
+      ct <- cor.test(vals[[1]], vals[[2]], method = "spearman")
+      tibble(Marker_A = pr[1], Marker_B = pr[2],
+             rho = ct$estimate, p = ct$p.value, n = nrow(vals))
+    })
+  })
+
+kable(cor_table, digits = 3,
+      caption = "Spearman Correlations of Site‑Level Alpha Diversity") %>%
+  kable_styling()
+
+# Scatter plots — Observed richness
+scatter_plots <- map(marker_pairs, function(pr) {
+  df <- alpha_wide %>% filter(Metric == "Observed") %>%
+    select(Sample_ID, Lake, all_of(pr)) %>% drop_na()
+  ggplot(df, aes(x = .data[[pr[1]]], y = .data[[pr[2]]], color = Lake)) +
+    geom_point(size = base_point_size) +
+    geom_smooth(method = "lm", se = TRUE, color = "black", linetype = 2) +
+    scale_color_manual(values = lake_colors) +
+    theme_minimal(base_size = base_text_size) +
+    labs(title = paste(pr[1], "vs.", pr[2], "(Observed Richness)"))
+})
+
+wrap_plots(scatter_plots, ncol = 3) +
+  plot_annotation(title = "Site‑Level Richness Concordance")
+```
+
+## Combined Data Alpha Diversity
+
+```{r alpha-combined, fig.height=6, fig.width=10}
+alpha_comb <- compute_alpha(ps_markers_combined, "All Markers Combined")
+alpha_comb_long <- alpha_comb %>%
+  pivot_longer(cols = all_of(alpha_metrics),
+               names_to = "Metric", values_to = "Value")
+
+ggplot(alpha_comb_long, aes(x = Lake, y = Value, fill = Lake)) +
+  geom_boxplot(outlier.shape = NA, alpha = .7) +
+  geom_jitter(width = .2, alpha = .5) +
+  facet_wrap(~ Metric, scales = "free_y") +
+  scale_fill_manual(values = lake_colors) +
+  theme_minimal(base_size = base_text_size) +
+  labs(title = "Alpha Diversity — Combined Marker Data (P/A)",
+       y = "Diversity Value")
+```
+
+---
+
+# Beta Diversity {.tabset}
+
+## Ordination & PERMANOVA Helpers
+
+```{r beta-helpers}
+run_ordination <- function(ps, method = "NMDS", distance = "jaccard",
+                            binary = TRUE, color_var = "Lake",
+                            shape_var = NULL, title = "") {
+  ps_use <- if (binary) to_pa(ps) else ps
+
+  ord <- ordinate(ps_use, method = method, distance = distance)
+
+  p <- plot_ordination(ps_use, ord,
+                       color = color_var, shape = shape_var) +
+    geom_point(size = base_point_size, alpha = .8) +
+    theme_minimal(base_size = base_text_size) +
+    labs(title = title)
+
+  if (color_var == "Lake")   p <- p + scale_color_manual(values = lake_colors)
+  if (color_var == "Marker") p <- p + scale_color_manual(values = marker_colors)
+
+  # 95% confidence ellipses when ≥ 2 groups with ≥ 3 points each
+  grps <- data.frame(sample_data(ps_use))[[color_var]]
+  grp_n <- table(grps)
+  if (sum(grp_n >= 3) >= 2)
+    p <- p + stat_ellipse(aes(group = .data[[color_var]]),
+                           type = "t", level = .95, linetype = 2)
+  list(plot = p, ordination = ord, ps = ps_use)
+}
+
+run_permanova <- function(ps, formula_str, distance = "jaccard",
+                           binary = TRUE, nperm = 999) {
+  ps_use <- if (binary) to_pa(ps) else ps
+  otu <- as(otu_table(ps_use), "matrix")
+  if (taxa_are_rows(ps_use)) otu <- t(otu)
+  meta <- data.frame(sample_data(ps_use))
+  dm <- vegdist(otu, method = distance, binary = binary)
+  adonis2(as.formula(paste("dm", formula_str)), data = meta,
+          permutations = nperm)
+}
+
+run_betadisper <- function(ps, group_var = "Lake",
+                            distance = "jaccard", binary = TRUE) {
+  ps_use <- if (binary) to_pa(ps) else ps
+  otu <- as(otu_table(ps_use), "matrix")
+  if (taxa_are_rows(ps_use)) otu <- t(otu)
+  meta <- data.frame(sample_data(ps_use))
+  dm <- vegdist(otu, method = distance, binary = binary)
+  bd <- betadisper(dm, meta[[group_var]])
+  list(betadisper = bd, permtest = permutest(bd, permutations = 999))
+}
+```
+
+## Within‑Marker: Jaccard (P/A)
+
+```{r beta-jaccard, fig.height=14, fig.width=16}
+ord_jac <- imap(ps_active_all, ~ run_ordination(
+  .x, "NMDS", "jaccard", TRUE, "Lake",
+  title = paste(.y, "— NMDS (Jaccard)")))
+
+wrap_plots(map(ord_jac, "plot"), ncol = 2) +
+  plot_annotation(title = "Beta Diversity — NMDS Jaccard (P/A)")
+```
+
+```{r permanova-jaccard}
+perm_jac <- imap_dfr(ps_active_all, function(ps, m) {
+  res <- run_permanova(ps, "~ Lake", "jaccard", TRUE)
+  as.data.frame(res) %>% rownames_to_column("Term") %>% mutate(Marker = m)
+})
+
+kable(perm_jac %>% filter(!is.na(`Pr(>F)`)), digits = 4,
+      caption = "PERMANOVA — Lake Effect (Jaccard)") %>%
+  kable_styling()
+```
+
+## Within‑Marker: Bray‑Curtis (Abundance)
+
+```{r beta-bray, fig.height=14, fig.width=16}
+ord_bray <- imap(ps_active_all, ~ run_ordination(
+  .x, "NMDS", "bray", FALSE, "Lake",
+  title = paste(.y, "— NMDS (Bray‑Curtis)")))
+
+wrap_plots(map(ord_bray, "plot"), ncol = 2) +
+  plot_annotation(title = "Beta Diversity — NMDS Bray‑Curtis (Abundance)")
+```
+
+```{r permanova-bray}
+perm_bray <- imap_dfr(ps_active_all, function(ps, m) {
+  res <- run_permanova(ps, "~ Lake", "bray", FALSE)
+  as.data.frame(res) %>% rownames_to_column("Term") %>% mutate(Marker = m)
+})
+
+kable(perm_bray %>% filter(!is.na(`Pr(>F)`)), digits = 4,
+      caption = "PERMANOVA — Lake Effect (Bray‑Curtis)") %>%
+  kable_styling()
+```
+
+## Betadisper (Dispersion)
+
+```{r betadisper, fig.height=10, fig.width=14, results='asis'}
+bd_res <- imap(ps_active_all, function(ps, m) {
+  bd <- run_betadisper(ps, "Lake", "jaccard", TRUE)
+  cat("\n\n###", m, "\n\n")
+  print(bd$permtest)
+  bd
+})
+```
+
+## Between Markers (Shared Samples, P/A)
+
+```{r beta-marker-comparison, fig.height=8, fig.width=12}
+shared_samps <- Reduce(intersect, map(ps_list, sample_names))
+
+build_marker_ps <- function(ps_list, rank = "Species", samps = shared_samps) {
+  combined <- imap(ps_list, function(ps, m) {
+    ps <- prune_samples(samps, ps) %>% agg_rank(rank) %>% to_pa()
+    sample_names(ps) <- paste0(m, "__", sample_names(ps))
+    sd <- data.frame(sample_data(ps))
+    sd$Marker <- m
+    sd$Original_Sample <- gsub(paste0(m, "__"), "", rownames(sd))
+    sample_data(ps) <- sample_data(sd)
+    ps
+  })
+  Reduce(merge_phyloseq, combined)
+}
+
+ps_mk_cmp <- build_marker_ps(ps_list)
+
+ord_mk <- run_ordination(ps_mk_cmp, "PCoA", "jaccard", TRUE,
+                           "Marker",
+                           title = "PCoA — Between Markers (Jaccard P/A)")
+ord_mk$plot
+
+perm_mk <- run_permanova(ps_mk_cmp, "~ Marker", "jaccard", TRUE)
+kable(as.data.frame(perm_mk), digits = 4,
+      caption = "PERMANOVA — Marker Effect") %>% kable_styling()
+```
+
+## Combined Data Ordination
+
+```{r beta-combined, fig.height=8, fig.width=14}
+p1 <- run_ordination(ps_markers_combined, "NMDS", "jaccard", TRUE,
+                      "Lake",
+                      title = "Combined Markers (Jaccard)")$plot
+
+p2 <- run_ordination(ps_all_combined, "NMDS", "jaccard", TRUE,
+                      "Lake",
+                      title = "Combined + Morphology (Jaccard)")$plot
+
+p1 + p2 + plot_annotation(title = "Beta Diversity — Combined Data (P/A)")
+```
+
+---
+
+# Differential Abundance — ANCOM‑BC2 {.tabset}
+
+> **Note:** ANCOM‑BC2 requires abundance (count) data and is run
+> **within each marker** separately.
+> It is *not* appropriate for presence/absence or cross‑marker comparisons.
+
+```{r ancombc-function}
+run_ancombc <- function(ps, group_var = "Lake", rank = "Genus",
+                         prev_cut = ancom_prevalence_threshold) {
+
+  ps_agg <- agg_rank(ps, rank)
+  # Pre‑filter low‑prevalence taxa
+  prev <- apply(as(otu_table(ps_agg), "matrix"),
+                if (taxa_are_rows(ps_agg)) 1 else 2,
+                function(x) mean(x > 0))
+  ps_filt <- prune_taxa(names(prev[prev >= prev_cut]), ps_agg)
+  if (ntaxa(ps_filt) < 3) { cat("Too few taxa after filtering.\n"); return(NULL) }
+
+  ancombc2(data = ps_filt,
+           fix_formula = group_var,
+           p_adj_method = "BH",
+           prv_cut = 0,
+           group = group_var,
+           struc_zero = TRUE,
+           neg_lb = TRUE,
+           verbose = FALSE)
+}
+```
+
+```{r ancombc-lake, fig.height=12, fig.width=14, results='asis'}
+ancom_res <- list()
+for (m in names(ps_list)) {
+  cat("\n\n##", m, "{.tabset}\n\n")
+  ancom_res[[m]] <- tryCatch(
+    run_ancombc(ps_list[[m]], "Lake", "Genus"),
+    error = function(e) { cat("Error:", e$message, "\n"); NULL })
+
+  if (!is.null(ancom_res[[m]])) {
+    res <- ancom_res[[m]]$res
+    diff_cols <- grep("^diff_", colnames(res), value = TRUE)
+    sig <- res %>% filter(if_any(all_of(diff_cols), ~ . == TRUE))
+    cat(nrow(sig), "significantly differentially abundant genera.\n\n")
+
+    if (nrow(sig) > 0) {
+      lfc_cols <- grep("^lfc_", colnames(res), value = TRUE)
+      q_cols   <- grep("^q_",   colnames(res), value = TRUE)
+
+      # Volcano plot (first contrast)
+      vdf <- tibble(taxon = res$taxon,
+                     lfc   = res[[lfc_cols[1]]],
+                     q     = res[[q_cols[1]]]) %>%
+        mutate(neg_log_q = -log10(q), sig = q < 0.05)
+
+      p <- ggplot(vdf, aes(lfc, neg_log_q, color = sig)) +
+        geom_point(alpha = .7) +
+        geom_hline(yintercept = -log10(.05), linetype = 2, color = "red") +
+        geom_text_repel(data = filter(vdf, sig),
+                        aes(label = taxon), size = 2.5,
+                        max.overlaps = 15) +
+        scale_color_manual(values = c("grey60", "red")) +
+        theme_minimal(base_size = base_text_size) +
+        labs(title = paste(m, "—", lfc_cols[1]),
+             x = "Log Fold Change", y = "-log10(q)")
+      print(p)
+    }
+  }
+}
+```
+
+---
+
+# Taxa Driving Differences {.tabset}
+
+## SIMPER
+
+```{r simper}
+run_simper_analysis <- function(ps, group_var = "Lake",
+                                 rank = "Genus", top_n = 15) {
+  ps_agg <- agg_rank(ps, rank) %>% subset_taxa_custom()
+  otu <- as(otu_table(ps_agg), "matrix")
+  if (taxa_are_rows(ps_agg)) otu <- t(otu)
+  meta <- data.frame(sample_data(ps_agg))
+  sim <- simper(otu, meta[[group_var]], permutations = 99)
+  summ <- lapply(names(summary(sim)), function(comp) {
+    s <- summary(sim)[[comp]]
+    s$taxon <- rownames(s); s$comparison <- comp
+    head(s, top_n)
+  })
+  list(simper = sim, top = bind_rows(summ))
+}
+
+simper_res <- imap(ps_active_all, function(ps, m) {
+  cat("SIMPER:", m, "\n")
+  run_simper_analysis(ps, comparison_var, "Genus")
+})
+
+for (m in names(simper_res)) {
+  cat("\n===", m, "===\n")
+  top <- simper_res[[m]]$top %>%
+    group_by(taxon) %>%
+    summarise(mean_contrib = mean(average, na.rm = TRUE), .groups = "drop") %>%
+    arrange(desc(mean_contrib)) %>% head(15)
+  print(kable(top, digits = 4))
+}
+```
+
+## Indicator Species Analysis
+
+```{r indicator-species}
+run_indicator <- function(ps, group_var = "Lake", rank = "Genus") {
+  ps_agg <- agg_rank(ps, rank) %>% subset_taxa_custom()
+  otu <- as(otu_table(ps_agg), "matrix")
+  if (taxa_are_rows(ps_agg)) otu <- t(otu)
+  meta <- data.frame(sample_data(ps_agg))
+  multipatt(otu, meta[[group_var]],
+            func = "IndVal.g",
+            control = how(nperm = 999))
+}
+
+indval_res <- imap(ps_active_all, function(ps, m) {
+  cat("IndVal:", m, "\n")
+  run_indicator(ps, comparison_var, "Genus")
+})
+
+for (m in names(indval_res)) {
+  cat("\n===", m, "===\n")
+  sig <- indval_res[[m]]$sign
+  sig <- sig[sig$p.value < 0.05, ]
+  if (nrow(sig) > 0) print(kable(sig[order(sig$p.value), ] %>% head(20), digits = 4))
+  else cat("No significant indicators.\n")
+}
+```
+
+## Heatmap of Top Taxa
+
+```{r heatmap-top-taxa, fig.height=14, fig.width=16}
+plot_top_heatmap <- function(ps, rank = "Genus",
+                              top_n = top_n_heatmap,
+                              annotation_var = "Lake") {
+
+  ps_agg <- agg_rank(ps, rank) %>% subset_taxa_custom()
+  ps_rel <- transform_sample_counts(ps_agg, function(x) x / sum(x))
+
+  otu <- as(otu_table(ps_rel), "matrix")
+  if (!taxa_are_rows(ps_rel)) otu <- t(otu)
+
+  # Assign readable row names
+  tt <- data.frame(tax_table(ps_rel), stringsAsFactors = FALSE)
+  rn <- tt[[rank]]
+  rn[is.na(rn)] <- paste0("Unassigned_", seq_along(rn[is.na(rn)]))
+  rownames(otu) <- make.unique(rn)
+
+  # Top N by mean
+  idx <- order(rowMeans(otu), decreasing = TRUE)[1:min(top_n, nrow(otu))]
+  otu_top <- otu[idx, , drop = FALSE]
+
+  # Annotation
+  ann <- data.frame(sample_data(ps_rel))[, annotation_var, drop = FALSE]
+
+  ann_colors <- list()
+  if ("Lake" %in% colnames(ann))
+    ann_colors[["Lake"]] <- lake_colors[levels(factor(ann$Lake, lake_order))]
+
+  pheatmap(otu_top,
+           annotation_col = ann,
+           annotation_colors = ann_colors,
+           cluster_cols = TRUE,
+           cluster_rows = TRUE,
+           fontsize_row = 7,
+           fontsize_col = 5,
+           color = viridis(100),
+           border_color = NA)
+}
+
+for (m in names(ps_active_all)) {
+  cat("\n###", m, "\n")
+  plot_top_heatmap(ps_active_all[[m]], "Genus")
+}
+```
+
+---
+
+# Geographic Analysis {.tabset}
+
+> Only samples with lat/long data (= samples with morphological data) are used.
+
+```{r geo-setup}
+meta_geo <- data.frame(sample_data(ps_morph)) %>%
+  rownames_to_column("Sample_ID") %>%
+  filter(!is.na(Latitude), !is.na(Longitude))
+meta_geo$Lake <- factor(meta_geo$Lake, levels = lake_order, ordered = TRUE)
+
+# Attach combined‑marker richness
+alpha_geo <- compute_alpha(subset_to_morph(ps_markers_combined), "Combined")
+meta_geo <- left_join(meta_geo,
+                       alpha_geo %>% select(Sample_ID, Observed, InvSimpson),
+                       by = "Sample_ID")
+```
+
+## Sampling Map
+
+```{r geo-map, fig.height=8, fig.width=12}
+basemap <- ne_states(country = c("United States of America", "Canada"),
+                     returnclass = "sf")
+
+ggplot() +
+  geom_sf(data = basemap, fill = "grey92", color = "grey60") +
+  geom_point(data = meta_geo,
+             aes(Longitude, Latitude, color = Lake, size = Observed),
+             alpha = .85) +
+  scale_color_manual(values = lake_colors) +
+  coord_sf(xlim = c(-93, -75), ylim = c(41, 49)) +
+  theme_minimal(base_size = base_text_size) +
+  labs(title = "Sampling Sites — Size = Observed Richness",
+       size = "Richness")
+```
+
+## Isolation by Distance (Mantel)
+
+```{r ibd, fig.height=10, fig.width=14}
+run_ibd <- function(ps, meta, lake) {
+  samps <- meta %>% filter(Lake == lake) %>% pull(Sample_ID)
+  ps_lk <- prune_samples(samps, ps) %>% to_pa()
+  if (nsamples(ps_lk) < 4) return(NULL)
+
+  otu <- as(otu_table(ps_lk), "matrix")
+  if (taxa_are_rows(ps_lk)) otu <- t(otu)
+  comm_d <- vegdist(otu, "jaccard", binary = TRUE)
+
+  coords <- meta %>%
+    filter(Sample_ID %in% sample_names(ps_lk)) %>%
+    arrange(match(Sample_ID, sample_names(ps_lk)))
+  geo_d <- as.dist(distm(coords[, c("Longitude","Latitude")],
+                          fun = distHaversine) / 1000)
+
+  mt <- mantel(comm_d, geo_d, method = "spearman", permutations = 999)
+  dd <- tibble(geo_km = as.vector(geo_d),
+               dissim = as.vector(comm_d),
+               Lake   = lake)
+  list(mantel = mt, dd = dd)
+}
+
+ps_geo <- subset_to_morph(ps_markers_combined)
+
+ibd_res <- map(lake_order, ~ tryCatch(
+  run_ibd(ps_geo, meta_geo, .x),
+  error = function(e) NULL))
+names(ibd_res) <- lake_order
+
+# Summary table
+mantel_tbl <- imap_dfr(ibd_res, function(r, lk) {
+  if (is.null(r)) return(tibble(Lake = lk, r = NA, p = NA))
+  tibble(Lake = lk, r = r$mantel$statistic, p = r$mantel$signif)
+})
+kable(mantel_tbl, digits = 4,
+      caption = "Mantel Tests — Isolation by Distance (Within‑Lake)") %>%
+  kable_styling()
+
+# Distance‑decay plots
+dd_all <- bind_rows(compact(map(ibd_res, "dd")))
+if (nrow(dd_all) > 0) {
+  ggplot(dd_all, aes(geo_km, dissim, color = Lake)) +
+    geom_point(alpha = .5) +
+    geom_smooth(method = "lm", se = TRUE) +
+    facet_wrap(~ Lake, scales = "free") +
+    scale_color_manual(values = lake_colors) +
+    theme_minimal(base_size = base_text_size) +
+    labs(title = "Distance‑Decay of Similarity",
+         x = "Geographic Distance (km)",
+         y = "Community Dissimilarity (Jaccard)")
+}
+```
+
+## Distance from Lake Centroid
+
+```{r dist-centroid, fig.height=8, fig.width=12}
+meta_geo <- meta_geo %>%
+  group_by(Lake) %>%
+  mutate(
+    cent_lon = mean(Longitude, na.rm = TRUE),
+    cent_lat = mean(Latitude, na.rm = TRUE),
+    dist_center_km = distHaversine(
+      cbind(Longitude, Latitude),
+      cbind(cent_lon, cent_lat)) / 1000
+  ) %>% ungroup()
+
+ggplot(meta_geo, aes(dist_center_km, Observed, color = Lake)) +
+  geom_point(size = base_point_size) +
+  geom_smooth(method = "lm", se = TRUE) +
+  facet_wrap(~ Lake, scales = "free") +
+  scale_color_manual(values = lake_colors) +
+  theme_minimal(base_size = base_text_size) +
+  labs(title = "Richness vs. Distance from Lake Centroid",
+       x = "Distance (km)", y = "Observed Richness")
+```
+
+## Spatial Eigenfunctions (dbMEMs)
+
+```{r dbmems, fig.height=10, fig.width=14}
+ps_geo_pa <- subset_to_morph(ps_markers_combined) %>% to_pa()
+
+coords_df <- meta_geo %>%
+  filter(Sample_ID %in% sample_names(ps_geo_pa)) %>%
+  arrange(match(Sample_ID, sample_names(ps_geo_pa))) %>%
+  select(Longitude, Latitude)
+
+geo_dm <- as.dist(distm(coords_df, fun = distHaversine) / 1000)
+
+dbmem_out <- dbmem(geo_dm, silent = TRUE)
+
+if (!is.null(dbmem_out) && ncol(as.data.frame(dbmem_out)) > 0) {
+  cat("Number of positive dbMEM eigenvectors:", ncol(as.data.frame(dbmem_out)), "\n")
+
+  # Forward selection of significant MEMs against community matrix
+  otu_geo <- as(otu_table(ps_geo_pa), "matrix")
+  if (taxa_are_rows(ps_geo_pa)) otu_geo <- t(otu_geo)
+
+  # Global test
+  rda_global <- rda(otu_geo ~ ., data = as.data.frame(dbmem_out))
+  anova_global <- anova(rda_global, permutations = 999)
+  cat("Global RDA p‑value:", anova_global$`Pr(>F)`[1], "\n")
+
+  if (anova_global$`Pr(>F)`[1] < 0.05) {
+    # Forward selection
+    fwd <- forward.sel(otu_geo, as.data.frame(dbmem_out),
+                       alpha = 0.05, nperm = 999)
+    cat("Selected dbMEMs:\n")
+    print(kable(fwd, digits = 4))
+  }
+} else {
+  cat("No positive dbMEM eigenvectors found.\n")
+}
+```
+
+## Map Community Composition (NMDS Scores)
+
+```{r geo-nmds-map, fig.height=8, fig.width=14}
+# Project NMDS axis scores onto geographic coordinates
+ord_geo <- ordinate(ps_geo_pa, "NMDS", "jaccard")
+scores_df <- as.data.frame(scores(ord_geo, display = "sites"))
+scores_df$Sample_ID <- rownames(scores_df)
+
+map_df <- left_join(meta_geo, scores_df, by = "Sample_ID")
+
+p_map1 <- ggplot() +
+  geom_sf(data = basemap, fill = "grey92", color = "grey60") +
+  geom_point(data = map_df,
+             aes(Longitude, Latitude, color = NMDS1), size = 4) +
+  scale_color_viridis_c() +
+  coord_sf(xlim = c(-93, -75), ylim = c(41, 49)) +
+  theme_minimal() + labs(title = "NMDS Axis 1 — Spatial Pattern")
+
+p_map2 <- ggplot() +
+  geom_sf(data = basemap, fill = "grey92", color = "grey60") +
+  geom_point(data = map_df,
+             aes(Longitude, Latitude, color = NMDS2), size = 4) +
+  scale_color_viridis_c(option = "magma") +
+  coord_sf(xlim = c(-93, -75), ylim = c(41, 49)) +
+  theme_minimal() + labs(title = "NMDS Axis 2 — Spatial Pattern")
+
+p_map1 + p_map2
+```
+
+---
+
+# Phylogenetic Trees {.tabset}
+
+Trees are built from the ASV sequences stored in each phyloseq object using
+DECIPHER alignment → neighbour‑joining (ape).
+
+```{r phylo-tree-function}
+build_nj_tree <- function(ps, rank = "Species") {
+  # Extract sequences (assumes taxa_names are DNA sequences or there is
+
+  # a refseq slot)
+  if (!is.null(ps@refseq)) {
+    seqs <- refseq(ps)
+  } else {
+    # If ASV sequences are stored as taxa names
+    seqs <- Biostrings::DNAStringSet(taxa_names(ps))
+    names(seqs) <- taxa_names(ps)
+  }
+
+  # Agglomerate for cleaner tree if not ASV level
+  if (rank != "ASV") {
+    ps_agg <- agg_rank(ps, rank)
+    if (!is.null(ps@refseq)) {
+      # Keep one representative sequence per taxon
+      keep <- taxa_names(ps_agg)
+      # Match back to original
+      tt_orig <- data.frame(tax_table(ps), stringsAsFactors = FALSE)
+      tt_orig$asv <- taxa_names(ps)
+      reps <- tt_orig %>%
+        group_by(.data[[rank]]) %>%
+        slice_head(n = 1) %>%
+        pull(asv)
+      seqs <- seqs[reps]
+    } else {
+      seqs <- Biostrings::DNAStringSet(taxa_names(ps_agg))
+      names(seqs) <- taxa_names(ps_agg)
+    }
+  }
+
+  # Subsample if too many sequences (> 500)
+  if (length(seqs) > 500) {
+    cat("  Subsampling to 500 sequences for tree building…\n")
+    idx <- sample(length(seqs), 500)
+    seqs <- seqs[idx]
+  }
+
+  # Align
+  aligned <- DECIPHER::AlignSeqs(seqs, verbose = FALSE)
+
+  # Distance matrix
+  dm <- DECIPHER::DistanceMatrix(aligned, verbose = FALSE)
+
+  # Neighbour‑joining tree
+  tree <- ape::nj(dm)
+  tree <- ape::ladderize(tree)
+
+  return(tree)
+}
+```
+
+```{r phylo-trees, fig.height=16, fig.width=14, results='asis'}
+for (m in names(ps_list)) {
+  cat("\n\n##", m, "\n\n")
+  cat("Building NJ tree for", m, "…\n")
+
+  tree <- tryCatch(
+    build_nj_tree(ps_list[[m]], "Species"),
+    error = function(e) { cat("Error:", e$message, "\n"); NULL }
+  )
+
+  if (!is.null(tree)) {
+    # Annotate tips with taxonomy
+    ps_agg <- agg_rank(ps_list[[m]], "Species")
+    tt <- data.frame(tax_table(ps_agg), stringsAsFactors = FALSE)
+
+    # Try to map tip labels to Phylum for colouring
+    tip_data <- tibble(label = tree$tip.label)
+    if (all(tip_data$label %in% rownames(tt))) {
+      tip_data$Phylum <- tt[tip_data$label, "Phylum"]
+    } else {
+      tip_data$Phylum <- "Unknown"
+    }
+
+    p <- ggtree(tree, layout = "circular") %<+% tip_data +
+      geom_tippoint(aes(color = Phylum), size = 1.5) +
+      theme(legend.position = "right") +
+      labs(title = paste(m, "— NJ Tree (Species Level)"))
+    print(p)
+  }
+}
+```
+
+### Morphology Tree (Taxonomy‑Based)
+
+Since morphological data have no sequences, we build a taxonomy‑based
+dendrogram (hierarchical clustering of the taxonomy table).
+
+```{r morph-tree, fig.height=12, fig.width=10}
+tt_morph <- data.frame(tax_table(ps_morph), stringsAsFactors = FALSE)
+tax_dist <- dist(tt_morph %>% mutate(across(everything(), as.factor)) %>%
+                   mutate(across(everything(), as.numeric)),
+                 method = "manhattan")
+morph_hclust <- hclust(tax_dist, method = "average")
+morph_phylo  <- as.phylo(morph_hclust)
+
+# Assign species labels
+morph_phylo$tip.label <- ifelse(
+  is.na(tt_morph$Species),
+  paste0(tt_morph$Genus, " sp."),
+  tt_morph$Species
+)[match(morph_phylo$tip.label, rownames(tt_morph))]
+
+ggtree(morph_phylo, layout = "circular") +
+  geom_tiplab(size = 2) +
+  labs(title = "Morphology — Taxonomy‑Based Dendrogram")
+```
+
+---
+
+# Venn Diagrams & UpSet Plots {.tabset}
+
+## Helper: Extract Taxa Sets
+
+```{r venn-helper}
+get_taxa_set <- function(ps, rank = "Species") {
+  ps_agg <- agg_rank(ps, rank) %>% to_pa()
+  tt <- data.frame(tax_table(ps_agg), stringsAsFactors = FALSE)
+  if (rank == "ASV") return(taxa_names(ps_agg))
+  ids <- tt[[rank]]
+  ids <- ids[!is.na(ids)]
+  unique(ids)
+}
+```
+
+## Species Level
+
+```{r venn-species, fig.height=8, fig.width=10}
+taxa_sets_sp <- imap(ps_list_all, ~ get_taxa_set(.x, "Species"))
+
+# ── Venn Diagram ──
+venn_colors <- unname(marker_colors[names(taxa_sets_sp)])
+
+venn.diagram(
+  x = taxa_sets_sp,
+  category.names = names(taxa_sets_sp),
+  filename = NULL,
+  output = TRUE,
+  imagetype = "none",
+  col = venn_colors,
+  fill = adjustcolor(venn_colors, alpha.f = 0.3),
+  cat.col = venn_colors,
+  cat.cex = 1.2,
+  margin = 0.1,
+  main = "Species Overlap"
+) -> venn_sp
+grid::grid.newpage()
+grid::grid.draw(venn_sp)
+```
+
+```{r upset-species, fig.height=6, fig.width=10}
+# ── UpSet Plot ──
+# Build binary matrix
+all_sp <- unique(unlist(taxa_sets_sp
