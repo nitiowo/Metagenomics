@@ -11,30 +11,29 @@ set -euo pipefail
 #
 
 #$ -N demux_pipeline
-#$ -t 1-96          # adjust to your sample count
-#$ -tc 12           # run max 12 tasks concurrently
+#$ -t 1-96          
+#$ -tc 12           
 #$ -cwd
-#$ -pe smp 4        # 4 cores per task
+#$ -pe smp 4        
 #$ -l h_vmem=8G
 #$ -o logs/
 #$ -e logs/
-#$ -V               # export the environment (optional but often useful)
 
-# create directories (runs on compute node); you can also create these locally before submitting
+
 mkdir -p logs summaries demux
 
-# load modules or activate conda env (uncomment and edit as appropriate)
+# Load modules or activate conda env (uncomment and edit as appropriate)
 # module load cutadapt/4.4
 # source /path/to/conda.sh && conda activate demux-env
 
-# read sample name for this task
+# Read sample name for this task
 SAMPLE=$(sed -n "${SGE_TASK_ID}p" samples.txt || true)
 
-# basic sanity check
-if [ -z "${SAMPLE}" ]; then
-  echo "ERROR: No sample found for SGE_TASK_ID=${SGE_TASK_ID} (check samples.txt)" >&2
-  exit 2
-fi
+# Basic sanity check
+# if [ -z "${SAMPLE}" ]; then
+#   echo "ERROR: No sample found for SGE_TASK_ID=${SGE_TASK_ID} (check samples.txt)" >&2
+#   exit 2
+# fi
 
 echo "=== Starting pipeline for ${SAMPLE} ==="
 

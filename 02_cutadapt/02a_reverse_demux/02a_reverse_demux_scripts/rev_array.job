@@ -2,9 +2,9 @@
 set -euo pipefail
 #$ -N joblog_demux_reverse
 #$ -t 1-96          # adjust to your sample count
-#$ -tc 12           # run max 6 tasks concurrently
+#$ -tc 12           # run max n tasks concurrently
 #$ -cwd
-#$ -pe smp 4        # 4 cores per task
+#$ -pe smp 4        # n cores per task
 #$ -o job_logs/
 #$ -e job_logs/
 #$ -q largemem

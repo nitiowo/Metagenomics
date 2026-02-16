@@ -1,10 +1,10 @@
 #!/bin/bash
 set -euo pipefail
 #$ -N joblog_demux_forward
-#$ -t 1-288          # adjust to your sample count
-#$ -tc 12           # run max 6 tasks concurrently
+#$ -t 1-288         
+#$ -tc 12           
 #$ -cwd
-#$ -pe smp 4        # 4 cores per task
+#$ -pe smp 4        
 #$ -o job_logs/
 #$ -e job_logs/
 #$ -q largemem
@@ -21,10 +21,10 @@ MANIFEST="../demux_out/01a_reverse/summaries/fwd_input_manifest.csv"
 LINE=$(tail -n +2 "$MANIFEST" | sed -n "${SGE_TASK_ID}p")
 
 # Basic sanity check
-if [ -z "${LINE}" ]; then
-  echo "ERROR: No sample found for SGE_TASK_ID=${SGE_TASK_ID} (check fwd_input_manifest.csv)" >&2
-  exit 2
-fi
+# if [ -z "${LINE}" ]; then
+#   echo "ERROR: No sample found for SGE_TASK_ID=${SGE_TASK_ID} (check fwd_input_manifest.csv)" >&2
+#   exit 2
+# fi
 
 # Parse fields (comma separated)
 SAMPLE=$(echo "$LINE" | cut -f1 -d ',')

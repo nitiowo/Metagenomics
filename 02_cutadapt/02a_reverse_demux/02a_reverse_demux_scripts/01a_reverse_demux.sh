@@ -1,5 +1,5 @@
 #!/usr/bin/env bash --login
-set -euo pipefail # Kills script in case of command failure
+set -euo pipefail
 
 # Usage: 01a_reverse_demux.sh <SAMPLE>
 
@@ -78,7 +78,6 @@ avg_len() {
                      END { print total / count }'
 } # Opens file, captures every 2nd line in each 4-line chunk, 
 # incrementally sums length of line, incrementally counts number of lines processed, calculates average
-
 
 # Setting manifest and summary files
 outMan="${MANDIR}/${SAMPLE}_rev_out_man.csv"
