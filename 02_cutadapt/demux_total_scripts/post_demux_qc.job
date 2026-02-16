@@ -2,7 +2,7 @@
 set -euo pipefail
 #$ -N fastqc_post_demux
 #$ -cwd
-#$ -pe smp 4        # n cores per task
+#$ -pe smp 4        
 #$ -o job_logs/
 #$ -e job_logs/
 #$ -q largemem

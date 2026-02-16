@@ -13,7 +13,7 @@
 **/*.RDS
 **/*Rhistory
 **/*RData
-.Rproj.user
+.Rproj
 
 # Databases #
 #############
@@ -26,7 +26,7 @@
 
 # Output files #
 ################
-**/*output*
+**/*_output*
 **/*work
 **/*pdf
 **/*csv
@@ -34,7 +34,6 @@
 **/*png
 **/*txt
 **/*html
-**/*log
 **/*json
 **/*fastqc.zip
 
@@ -48,7 +47,6 @@
 
 # Others #
 ##########
-**/*helper
-**/*random
+**/*testing_grounds
 **/*.swp
-**/*messaround
+

@@ -1,6 +1,8 @@
-## This directory is for performing initial exploratory quality checks on all the files using fastqc.
-# Run fastqc and multiqc on all files and look at mulitqc output
+# Quality control
 
-First run sampsheet.sh to generate a sample list with simplifies sample names.
+Run FastQC on all raw reads, then summarize with MultiQC.
+`sampsheet.sh` (in `00_prep/`) generates the sample list first.
 
-Next run fastQC.sh then multiqc.sh. Alternatively, submit fullQC.job to cluster to do both steps at once.
+- `fastQC.sh` — runs fastqc on everything in the raw data dir
+- `multiqc.sh` — aggregates fastqc output
+- `fullQC.job` — SGE job that runs both

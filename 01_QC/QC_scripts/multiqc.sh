@@ -1,7 +1,7 @@
 #!/bin/bash --login
 
-# Load multiqc (eg; HPC module or conda) if necessary
-#conda activate fastqc-env
+# Load multiqc (through module or conda)
+# conda activate fastqc-env
 
 # Create output directory if it doesn't exist
 mkdir -p ../multiqc_output
@@ -10,4 +10,4 @@ mkdir -p ../multiqc_output
 multiqc ../fastqc_output/ -o ../multiqc_output
 
 # Deactivate multiqc
-#conda deactivate if necessary
+# conda deactivate

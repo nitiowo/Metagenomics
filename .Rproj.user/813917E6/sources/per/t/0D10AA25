@@ -1,0 +1,27 @@
+{
+    "id": "0D10AA25",
+    "path": "/Volumes/Samsung_1TB/Zooplankton/Metagenomics/DBs/DB_scripts/taxfix.R",
+    "project_path": "DBs/DB_scripts/taxfix.R",
+    "type": "r_source",
+    "hash": "1371248960",
+    "contents": "",
+    "dirty": false,
+    "created": 1764894014173.0,
+    "source_on_save": false,
+    "relative_order": 7,
+    "properties": {
+        "tempName": "Untitled1",
+        "source_window_id": "",
+        "Source": "Source",
+        "cursorPosition": "38,31",
+        "scrollLine": "0"
+    },
+    "folds": "41|99|51|0|\n58|47|143|0|\n",
+    "lastKnownWriteTime": 1765420211,
+    "encoding": "UTF-8",
+    "collab_server": "",
+    "source_window": "",
+    "last_content_update": 1765420211810,
+    "read_only": false,
+    "read_only_alternatives": []
+}

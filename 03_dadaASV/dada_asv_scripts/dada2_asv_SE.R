@@ -6,6 +6,7 @@
 # BiocManager::install("dada2", version = "3.11")
 # install.packages('argparser')
 
+# This scripts only uses forward reads and skips merging before ASV generation
 
 library(dada2); packageVersion("dada2")
 library(argparser, quietly = TRUE)
@@ -36,9 +37,9 @@ fastqs <- files[grepl(".fastq.gz$", files)] # gz
 
 dir.create(outdir)
 
-######################################################################################################
+######################################################
 # Setting naming convention for F/R input fastq files
-######################################################################################################
+######################################################
 fnFs <- sort(list.files(path, pattern = "_R1.fastq.gz", full.names = TRUE))
 # fnRs <- sort(list.files(path, pattern = "_R2.fastq.gz", full.names = TRUE))
 
@@ -70,7 +71,7 @@ filtFs <- file.path(path, "filtered", paste0(sample.names, "_F_filt.fastq.gz"))
 names(filtFs) <- sample.names
 # names(filtRs) <- sample.names
 
-# Modify and add new parameter based on your data.
+# Choose trunclen based on quality profiles
 out <- filterAndTrim(fnFs, filtFs, truncLen = 273, maxN = 0, maxEE = 3, 
                      #truncQ=5, truncQ not recommended
                      rm.phix = TRUE, compress = TRUE, multithread = TRUE)

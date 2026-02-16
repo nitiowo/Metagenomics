@@ -1,0 +1,24 @@
+{
+    "id": "5A81AC9E",
+    "path": "/Volumes/Samsung_1TB/Zooplankton/Metagenomics/DBs/DB_scripts/Db_explore.R",
+    "project_path": "DBs/DB_scripts/Db_explore.R",
+    "type": "r_source",
+    "hash": "2579547891",
+    "contents": "",
+    "dirty": false,
+    "created": 1764801260174.0,
+    "source_on_save": false,
+    "relative_order": 1,
+    "properties": {
+        "source_window_id": "",
+        "Source": "Source"
+    },
+    "folds": "",
+    "lastKnownWriteTime": 1759191336,
+    "encoding": "UTF-8",
+    "collab_server": "",
+    "source_window": "",
+    "last_content_update": 1759191336,
+    "read_only": false,
+    "read_only_alternatives": []
+}

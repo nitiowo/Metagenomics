@@ -36,9 +36,9 @@ fastqs <- files[grepl(".fastq.gz$", files)] # gz
 
 dir.create(outdir)
 
-######################################################################################################
+######################################################
 # Setting naming convention for F/R input fastq files
-######################################################################################################
+######################################################
 fnFs <- sort(list.files(path, pattern = "_R1.fastq.gz", full.names = TRUE))
 fnRs <- sort(list.files(path, pattern = "_R2.fastq.gz", full.names = TRUE))
 
@@ -70,7 +70,7 @@ filtRs <- file.path(path, "filtered", paste0(sample.names, "_R_filt.fastq.gz"))
 names(filtFs) <- sample.names
 names(filtRs) <- sample.names
 
-# Modify and add new parameter based on your data.
+# Choose trunclen based on quality profiles
 out <- filterAndTrim(fnFs, filtFs, fnRs, filtRs, 
                      truncLen = c(276,200), maxN = 0, maxEE = c(2,2), 
                      # truncQ = 5, truncQ not recommended

@@ -1,0 +1,27 @@
+{
+    "id": "0C153E2F",
+    "path": "/Volumes/Samsung_1TB/Zooplankton/Metagenomics/DBs/DB_scripts/Makin_dadas.R",
+    "project_path": "DBs/DB_scripts/Makin_dadas.R",
+    "type": "r_source",
+    "hash": "2244679456",
+    "contents": "",
+    "dirty": false,
+    "created": 1765311438165.0,
+    "source_on_save": false,
+    "relative_order": 7,
+    "properties": {
+        "tempName": "Untitled1",
+        "source_window_id": "",
+        "Source": "Source",
+        "cursorPosition": "107,56",
+        "scrollLine": "100"
+    },
+    "folds": "",
+    "lastKnownWriteTime": 1765420190,
+    "encoding": "UTF-8",
+    "collab_server": "",
+    "source_window": "",
+    "last_content_update": 1765420190,
+    "read_only": false,
+    "read_only_alternatives": []
+}
