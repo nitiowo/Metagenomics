@@ -3,6 +3,8 @@
 Run FastQC on all raw reads, then summarize with MultiQC.
 `sampsheet.sh` (in `00_prep/`) generates the sample list first.
 
-- `fastQC.sh` — runs fastqc on everything in the raw data dir
-- `multiqc.sh` — aggregates fastqc output
-- `fullQC.job` — SGE job that runs both
+- `run_qc.job` — SGE job that runs FastQC then MultiQC in sequence
+
+## Configuration
+
+Rename `QC_scripts/config.sh.example` to `config.sh` and edit parameters before running. `config.sh` is gitignored.
