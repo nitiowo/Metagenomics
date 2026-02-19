@@ -1,0 +1,13 @@
+#!/bin/bash
+# Example config for 01_QC QC scripts
+# Change the filename to `config.sh` before using.
+
+# Path to raw data directory
+RAW_DIR="/path/to/raw_data"
+
+# Output directories
+FASTQC_OUTDIR="../fastqc_output"
+MULTIQC_OUTDIR="../multiqc_output"
+
+# Conda environment name
+CONDA_ENV="multiqc-env"

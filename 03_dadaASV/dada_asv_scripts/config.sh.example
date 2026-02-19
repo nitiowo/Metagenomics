@@ -1,0 +1,32 @@
+#!/bin/bash
+# Example config for 03_dadaASV scripts
+# Change the filename to `config.sh` before using.
+
+# Which R script to run: "dada2_asv.R" (paired-end) or "dada2_asv_SE.R" (single-end)
+ASV_SCRIPT="dada2_asv_SE.R"
+
+# Input directory containing demultiplexed fastqs
+INPUT_DIR="/path/to/demuxed_fastqs"
+
+# Output directory for ASV results
+OUTPUT_DIR="/path/to/dada_asv_output"
+
+# Prefix for output filenames
+OUT_PREFIX="sample_prefix"
+
+# -- DADA2 filtering parameters --
+# For paired-end: comma-separated truncLen for F,R (e.g., "276,200")
+# For single-end: single value (e.g., "273")
+TRUNC_LEN="273"
+
+# Maximum expected errors (paired-end: "2,2"; single-end: "3")
+MAX_EE="3"
+
+# Max N bases allowed
+MAX_N=0
+
+# Minimum read length after filtering
+MIN_LEN=40
+
+# Conda environment name
+CONDA_ENV="dada2-env"

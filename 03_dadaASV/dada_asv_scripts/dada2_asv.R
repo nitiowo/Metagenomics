@@ -15,6 +15,10 @@ p <- arg_parser("DADA2 in R")
 p = add_argument(p, "--input", help = "Enter input folder", type = 'character')
 p = add_argument(p, "--output", help = "Enter output folder", type = 'character')
 p = add_argument(p, "--outprefix", help = "Enter output prefix for filenames", type = 'character')
+p = add_argument(p, "--trunclen", help = "Comma-separated truncLen for F,R (e.g. 276,200)", type = 'character', default = "276,200")
+p = add_argument(p, "--maxee", help = "Comma-separated maxEE for F,R (e.g. 2,2)", type = 'character', default = "2,2")
+p = add_argument(p, "--maxn", help = "Max Ns allowed", type = 'integer', default = 0)
+p = add_argument(p, "--minlen", help = "Minimum read length after filtering", type = 'integer', default = 40)
 
 # Parse the command line arguments
 argv <- parse_args(p)
@@ -24,11 +28,11 @@ path = argv$input
 outdir = argv$output
 outprefix = paste0(outdir, "/", argv$outprefix, "_")
 
-# INTERACTIVE MODE
-# path = '/Volumes/Samsung_1TB/Zooplankton/Metagenomics/02_cutadapt/02c_rescue_demux/02c_rescue_demux_output/subsets/SSUF_subset'
-# outdir = '/Volumes/Samsung_1TB/Zooplankton/Metagenomics/03_dadaASV/dada_asv_output/SSUF_subset'
-# outprefix = "SSU_18S"
-# outprefix = paste0(outdir, "/", outprefix, "_")
+# Parse comma-separated truncLen and maxEE
+truncLen_vals <- as.integer(strsplit(argv$trunclen, ",")[[1]])
+maxEE_vals <- as.numeric(strsplit(argv$maxee, ",")[[1]])
+maxN_val <- argv$maxn
+minLen_val <- argv$minlen
 
 files <- list.files(path)
 fastqs <- files[grepl(".fastq.gz$", files)] # gz
@@ -72,9 +76,9 @@ names(filtRs) <- sample.names
 
 # Choose trunclen based on quality profiles
 out <- filterAndTrim(fnFs, filtFs, fnRs, filtRs, 
-                     truncLen = c(276,200), maxN = 0, maxEE = c(2,2), 
+                     truncLen = truncLen_vals, maxN = maxN_val, maxEE = maxEE_vals, 
                      # truncQ = 5, truncQ not recommended
-                     rm.phix = TRUE, compress = TRUE, multithread = TRUE, minLen = 40)
+                     rm.phix = TRUE, compress = TRUE, multithread = TRUE, minLen = minLen_val)
 
 
 # Examine quality profiles of filtered reads

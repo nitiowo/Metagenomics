@@ -123,6 +123,3 @@ for (nm in names(ps_list)) {
   ps_list[[nm]] <- res$ps
   saveRDS(ps_list[[nm]], file = paste0(fileprefix, "_ps.RDS"))
 }
-
-
-

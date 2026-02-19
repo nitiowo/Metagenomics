@@ -1,0 +1,24 @@
+#!/bin/bash
+# Example config for 04_dadaTax scripts
+# Change the filename to `config.sh` before using.
+
+# Input: path to seqtab.nochim RDS from dada2
+RDS_PATH="/path/to/seqtab.nochim.Rds"
+
+# Reference database for assignTaxonomy
+REF_FASTA="/path/to/ref_taxonomy.fasta"
+
+# Whether to also run addSpecies ("true" or "false")
+RUN_SPECIES="true"
+
+# Reference database for addSpecies (only used if RUN_SPECIES=true)
+SPECIES_FASTA="/path/to/species_ref.fasta"
+
+# Output directory
+OUTPUT_DIR="/path/to/dada_tax_output"
+
+# Prefix for output filenames
+OUT_PREFIX="sample_prefix"
+
+# Conda environment name
+CONDA_ENV="dada2-env"

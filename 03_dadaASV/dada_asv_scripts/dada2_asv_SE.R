@@ -16,6 +16,10 @@ p <- arg_parser("DADA2 in R")
 p = add_argument(p, "--input", help = "Enter input folder", type = 'character')
 p = add_argument(p, "--output", help = "Enter output folder", type = 'character')
 p = add_argument(p, "--outprefix", help = "Enter output prefix for filenames", type = 'character')
+p = add_argument(p, "--trunclen", help = "truncLen for forward reads (single value)", type = 'integer', default = 273)
+p = add_argument(p, "--maxee", help = "maxEE for forward reads (single value)", type = 'numeric', default = 3)
+p = add_argument(p, "--maxn", help = "Max Ns allowed", type = 'integer', default = 0)
+p = add_argument(p, "--minlen", help = "Minimum read length after filtering", type = 'integer', default = 40)
 
 # Parse the command line arguments
 argv <- parse_args(p)
@@ -25,11 +29,11 @@ path = argv$input
 outdir = argv$output
 outprefix = paste0(outdir, "/", argv$outprefix, "_")
 
-# INTERACTIVE MODE
-# path = '/Volumes/Samsung_1TB/Zooplankton/Metagenomics/02_cutadapt/02c_rescue_demux/02c_rescue_demux_output/subsets/SSUF_subset'
-# outdir = '/Volumes/Samsung_1TB/Zooplankton/Metagenomics/03_dadaASV/dada_asv_output/SSUF_subset'
-# outprefix = "SSU_18S"
-# outprefix = paste0(outdir, "/", outprefix, "_")
+# Parse filtering params
+truncLen_val <- argv$trunclen
+maxEE_val <- argv$maxee
+maxN_val <- argv$maxn
+minLen_val <- argv$minlen
 
 files <- list.files(path)
 fastqs <- files[grepl(".fastq.gz$", files)] # gz
@@ -72,9 +76,9 @@ names(filtFs) <- sample.names
 # names(filtRs) <- sample.names
 
 # Choose trunclen based on quality profiles
-out <- filterAndTrim(fnFs, filtFs, truncLen = 273, maxN = 0, maxEE = 3, 
+out <- filterAndTrim(fnFs, filtFs, truncLen = truncLen_val, maxN = maxN_val, maxEE = maxEE_val, 
                      #truncQ=5, truncQ not recommended
-                     rm.phix = TRUE, compress = TRUE, multithread = TRUE)
+                     rm.phix = TRUE, compress = TRUE, multithread = TRUE, minLen = minLen_val)
 
 
 # Examine quality profiles of filtered reads

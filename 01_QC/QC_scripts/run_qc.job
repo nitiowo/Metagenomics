@@ -1,0 +1,29 @@
+#!/bin/bash
+#$ -M nvincen2@nd.edu
+#$ -m abe
+#$ -q largemem
+#$ -pe smp 8
+#$ -N QC_all
+#$ -o job_logs/
+#$ -e job_logs/
+
+# Combined QC job: runs FastQC then MultiQC
+
+# Source config (create `config.sh` from `config.sh.example`)
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+source "${SCRIPT_DIR}/config.sh"
+
+conda activate "${CONDA_ENV}"
+
+# --- FastQC ---
+echo "Running FastQC..."
+mkdir -p "${FASTQC_OUTDIR}"
+fastqc "${RAW_DIR}"/* -o "${FASTQC_OUTDIR}/"
+
+# --- MultiQC ---
+echo "Running MultiQC..."
+mkdir -p "${MULTIQC_OUTDIR}"
+multiqc "${FASTQC_OUTDIR}/" -o "${MULTIQC_OUTDIR}"
+
+conda deactivate
+echo "QC pipeline complete."

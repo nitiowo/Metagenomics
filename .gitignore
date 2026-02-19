@@ -48,5 +48,6 @@
 # Others #
 ##########
 **/*testing_grounds
+**/config.sh
 **/*.swp
 

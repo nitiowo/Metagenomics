@@ -1,0 +1,9 @@
+#!/bin/bash
+# Example config for 00_prep prep scripts
+# Change the filename to `config.sh` before using.
+
+# Path to raw data directory
+RAW_DIR="/path/to/raw_data"
+
+# Output file for sample list
+SAMPLES_FILE="/path/to/samples.txt"
