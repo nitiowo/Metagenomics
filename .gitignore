@@ -50,4 +50,4 @@
 **/*testing_grounds
 **/config.sh
 **/*.swp
-
+**/*.test
