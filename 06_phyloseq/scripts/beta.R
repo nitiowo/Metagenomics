@@ -5,39 +5,44 @@ library(phyloseq)
 library(tidyverse)
 library(vegan)
 library(ggplot2)
+library(patchwork)
 
 source("setup.R")
+source("zoop_functions.R")
 
 outdir <- file.path(output_root, "beta")
 dir.create(file.path(outdir, "figures"), recursive = TRUE, showWarnings = FALSE)
+dir.create(file.path(outdir, "stats"), recursive = TRUE, showWarnings = FALSE)
 
 # Control
-use_ps      <- ps_all_methods[["COI"]]  
+use_ps_list <- ps_all_methods
+use_markers <- NULL
+use_lakes   <- NULL
 color_var   <- "Lake"
-fill_colors <- lake_colors
-ord_method  <- "NMDS"
-dist_method <- "jaccard"
-use_binary  <- TRUE
-plot_title  <- "NMDS Jaccard (P/A) - COI"
-out_file    <- file.path(outdir, "figures", "nmds_jaccard.pdf")
-plot_width  <- 8
-plot_height <- 6
 
-# Presence/absence transform
-if (use_binary) {
-  otu <- as(otu_table(use_ps), "matrix")
-  otu[otu > 0] <- 1
-  otu_table(use_ps) <- otu_table(otu, taxa_are_rows = taxa_are_rows(use_ps))
-}
+# Filter
+ps_filt <- filter_ps_list(use_ps_list, use_markers, use_lakes)
 
-# Ordination
-ord <- ordinate(use_ps, method = ord_method, distance = dist_method)
+# Within-marker ordinations: Jaccard P/A. Use Bray-Curtis for abundance.
+ord_jac <- imap(ps_filt, ~ run_ordination(
+  .x, "NMDS", "jaccard", TRUE, color_var,
+  title = paste(.y, "- NMDS Jaccard"),
+  color_palette = lake_colors
+))
 
-# Plot
-p <- plot_ordination(use_ps, ord, color = color_var) +
-  geom_point(size = 2.5, alpha = 0.8) +
-  scale_color_manual(values = fill_colors) +
-  theme_minimal(base_size = 10) +
-  labs(title = plot_title)
+p_jac <- wrap_plots(map(ord_jac, "plot"), ncol = 2) +
+  plot_annotation(title = "NMDS Jaccard (P/A)")
+save_plot(p_jac, file.path(outdir, "figures", "nmds_jaccard_all_markers.pdf"),
+          width = 16, height = 14)
 
-ggsave(out_file, p, width = plot_width, height = plot_height)
+# PERMANOVA: lake effect (Jaccard P/A)
+perm_jac <- imap_dfr(ps_filt, function(ps, m) {
+  res <- run_permanova(ps, "~ Lake", "jaccard", TRUE)
+  as.data.frame(res) %>%
+    rownames_to_column("Term") %>%
+    mutate(Marker = m)
+}) %>% filter(!is.na(`Pr(>F)`))
+
+write.csv(perm_jac,
+          file.path(outdir, "stats", "permanova_jaccard_by_marker.csv"),
+          row.names = FALSE)

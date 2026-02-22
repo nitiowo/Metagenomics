@@ -1,0 +1,197 @@
+# zoop_functions.R
+# Shared helper functions for zooplankton phyloseq analysis
+# Source this from individual analysis scripts (not setup.R)
+
+# ============================================================
+# Data Prep
+# ============================================================
+
+# Make sure Lake order always remains the same
+set_lake_order <- function(ps, lake_order) {
+  sd <- data.frame(sample_data(ps))
+  sd$Lake <- factor(sd$Lake, levels = lake_order, ordered = TRUE)
+  if ("Mesh" %in% colnames(sd)) sd$Mesh <- factor(sd$Mesh)
+  sample_data(ps) <- sample_data(sd)
+  ps
+}
+
+# Agglomerates to a specific tax rank
+agg_rank <- function(ps, rank = "Species") {
+  if (rank == "ASV") return(ps)
+  tt <- access(ps, "tax_table", errorIfNULL = FALSE)
+  if (is.null(tt)) {
+    warning("No tax_table, skipping aggregation")
+    return(ps)
+  }
+  if (!(rank %in% rank_names(ps))) {
+    warning("Rank '", rank, "' not in tax_table, skipping")
+    return(ps)
+  }
+  tax_glom(ps, taxrank = rank, NArm = FALSE)
+}
+
+# Converts OTU table to presence/absence data
+to_pa <- function(ps) {
+  ot <- as(otu_table(ps), "matrix")
+  ot[ot > 0] <- 1
+  otu_table(ps) <- otu_table(ot, taxa_are_rows = taxa_are_rows(ps))
+  ps
+}
+
+# Specify taxa list to include/exclude, and subset
+subset_taxa_custom <- function(ps, tsub = NULL) {
+  if (is.null(tsub)) return(ps)
+  tt <- data.frame(tax_table(ps), stringsAsFactors = FALSE)
+  rc <- tsub$rank
+  if (!is.null(tsub$include)) {
+    keep <- which(tt[[rc]] %in% tsub$include)
+    ps <- prune_taxa(taxa_names(ps)[keep], ps)
+  }
+  if (!is.null(tsub$exclude)) {
+    keep <- which(!(tt[[rc]] %in% tsub$exclude))
+    ps <- prune_taxa(taxa_names(ps)[keep], ps)
+  }
+  prune_samples(sample_sums(ps) > 0, ps)
+}
+
+# Filters a  list of ps objects by specified variables
+filter_ps_list <- function(ps_list, markers = NULL, lakes = NULL,
+                           mesh = NULL, tsub = NULL) {
+  if (!is.null(markers))
+    ps_list <- ps_list[intersect(names(ps_list), markers)]
+
+  lapply(ps_list, function(ps) {
+    if (!is.null(lakes)) {
+      sd <- data.frame(sample_data(ps))
+      keep <- rownames(sd)[sd$Lake %in% lakes]
+      if (length(keep) > 0) ps <- prune_samples(keep, ps)
+    }
+    if (!is.null(mesh)) {
+      sd <- data.frame(sample_data(ps))
+      keep <- rownames(sd)[sd$Mesh %in% mesh]
+      if (length(keep) > 0) ps <- prune_samples(keep, ps)
+    }
+    if (!is.null(tsub)) ps <- subset_taxa_custom(ps, tsub)
+    ps
+  })
+}
+
+sig_stars <- function(p) {
+  case_when(
+    p < 0.001 ~ "***",
+    p < 0.01  ~ "**",
+    p < 0.05  ~ "*",
+    TRUE      ~ "ns"
+  )
+}
+
+# Save plot
+save_plot <- function(p, filepath, width = 12, height = 8) {
+  dir.create(dirname(filepath), recursive = TRUE, showWarnings = FALSE)
+  ggsave(filepath, p, width = width, height = height)
+  cat("Saved:", filepath, "\n")
+}
+
+# ============================================================
+# Exploratory Functions
+# ============================================================
+
+# Overall summary function for exploration.R
+summarise_ps <- function(ps, name = "dataset",
+                         tax_ranks = c("Phylum", "Class", "Order",  # Make tax ranks constant !!!
+                                       "Family", "Genus", "Species")) {
+  tt <- data.frame(tax_table(ps), stringsAsFactors = FALSE)
+  otu <- as(otu_table(ps), "matrix")
+  if (!taxa_are_rows(ps)) otu <- t(otu)
+  taxon_totals <- rowSums(otu)
+  grand_total <- sum(taxon_totals)
+
+  rows <- list()
+  for (r in tax_ranks) {
+    if (r %in% colnames(tt)) {
+      n_unique <- length(unique(na.omit(tt[[r]])))
+      n_na <- sum(is.na(tt[[r]]))
+      pct_un <- if (grand_total > 0) {
+        round(100 * sum(taxon_totals[is.na(tt[[r]])]) / grand_total, 1)
+      } else {
+        0
+      }
+      rows[[r]] <- tibble(rank = r, unique_taxa = n_unique,
+                          unassigned_asvs = n_na, pct_reads_unassigned = pct_un)
+    }
+  }
+  summary_df <- bind_rows(rows)
+  summary_df$dataset <- name
+  summary_df$samples <- nsamples(ps)
+  summary_df$total_asvs <- ntaxa(ps)
+  summary_df
+}
+
+# ============================================================
+# Alpha Diversity Functions
+# ============================================================
+
+# Computes alpha diversity, compares with metadata variables
+compute_alpha <- function(ps, marker_name,
+                          metrics = c("Observed", "InvSimpson"),
+                          lake_order = NULL) {
+  ad <- estimate_richness(ps, measures = metrics)
+  ad$Sample_ID <- sample_names(ps)
+  ad$Marker <- marker_name
+  meta <- data.frame(sample_data(ps))
+  meta$Sample_ID <- rownames(meta)
+  ad <- left_join(ad, meta, by = "Sample_ID")
+  if (!is.null(lake_order))
+    ad$Lake <- factor(ad$Lake, levels = lake_order, ordered = TRUE)
+  ad
+}
+
+# For many markers
+compute_alpha_all <- function(ps_list,
+                              metrics = c("Observed", "InvSimpson"),
+                              lake_order = NULL) {
+  bind_rows(imap(ps_list, ~ compute_alpha(.x, .y, metrics, lake_order)))
+}
+
+# ============================================================
+# Beta Diversity Functions
+# ============================================================
+
+# Runs ordination and returns a list with the plot, ordination, and ps
+run_ordination <- function(ps, method = "NMDS", distance = "jaccard",
+                           binary = TRUE, color_var = "Lake",
+                           shape_var = NULL, title = "",
+                           color_palette = NULL,
+                           point_size = 2.5, text_size = 10) {
+  ps_use <- if (binary) to_pa(ps) else ps
+  ord <- ordinate(ps_use, method = method, distance = distance)
+
+  p <- plot_ordination(ps_use, ord, color = color_var, shape = shape_var) +
+    geom_point(size = point_size, alpha = 0.8) +
+    theme_minimal(base_size = text_size) +
+    labs(title = title)
+
+  if (!is.null(color_palette))
+    p <- p + scale_color_manual(values = color_palette)
+
+  # 95% t-ellipses if >= 2 groups with >= 3 points
+  grps <- data.frame(sample_data(ps_use))[[color_var]]
+  grp_n <- table(grps)
+  if (sum(grp_n >= 3) >= 2)
+    p <- p + stat_ellipse(aes(group = .data[[color_var]]),
+                          type = "t", level = 0.95, linetype = 2)
+
+  list(plot = p, ordination = ord, ps = ps_use)
+}
+
+# Runs PERMANOVA on a ps object
+run_permanova <- function(ps, formula_str, distance = "jaccard",
+                          binary = TRUE, nperm = 999) {
+  ps_use <- if (binary) to_pa(ps) else ps
+  otu <- as(otu_table(ps_use), "matrix")
+  if (taxa_are_rows(ps_use)) otu <- t(otu)
+  meta <- data.frame(sample_data(ps_use))
+  dm <- vegdist(otu, method = distance, binary = binary)
+  adonis2(as.formula(paste("dm", formula_str)), data = meta,
+          permutations = nperm)
+}
