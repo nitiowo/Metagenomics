@@ -1,27 +1,30 @@
 # exploratory.R
 # Dataset summaries
 
-library(phyloseq)
-library(tidyverse)
-
 source("setup.R")
-source("zoop_functions.R")
 
 outdir <- file.path(output_root, "exploratory")
-dir.create(file.path(outdir, "stats"), recursive = TRUE, showWarnings = FALSE)
 
-# Control
-use_ps      <- ps_all_methods[["Folmer"]]
-use_name    <- "Folmer"
-use_ranks   <- tax_ranks
+# ---- Summarize All Datasets ----
+datasets <- ps_all_methods
 
-# Summarise
-summary_df <- summarise_ps(use_ps, use_name, use_ranks)
+summary_df <- imap_dfr(datasets, ~ summarise_ps(.x, .y, tax_ranks))
 
 summary_df <- summary_df %>%
   select(dataset, samples, total_asvs, rank, unique_taxa,
          unassigned_asvs, pct_reads_unassigned)
 
+# ---- Print to console and save----
+for (nm in names(datasets)) {
+  summarise_ps_print(datasets[[nm]], nm, tax_ranks)
+}
+
 write.csv(summary_df,
           file.path(outdir, "stats", "dataset_summary.csv"),
           row.names = FALSE)
+
+txt <- capture.output({
+  for (nm in names(datasets))
+    summarise_ps_print(datasets[[nm]], nm, tax_ranks)
+})
+save_summary(txt, file.path(outdir, "stats", "dataset_summary.txt"))

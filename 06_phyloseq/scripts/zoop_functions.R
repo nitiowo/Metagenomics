@@ -1,10 +1,7 @@
 # zoop_functions.R
 # Shared helper functions for zooplankton phyloseq analysis
-# Source this from individual analysis scripts (not setup.R)
 
-# ============================================================
-# Data Prep
-# ============================================================
+# ---- Data Prep ----
 
 # Make sure Lake order always remains the same
 set_lake_order <- function(ps, lake_order) {
@@ -59,7 +56,6 @@ filter_ps_list <- function(ps_list, markers = NULL, lakes = NULL,
                            mesh = NULL, tsub = NULL) {
   if (!is.null(markers))
     ps_list <- ps_list[intersect(names(ps_list), markers)]
-
   lapply(ps_list, function(ps) {
     if (!is.null(lakes)) {
       sd <- data.frame(sample_data(ps))
@@ -76,6 +72,9 @@ filter_ps_list <- function(ps_list, markers = NULL, lakes = NULL,
   })
 }
 
+# ---- Output Functions ----
+
+# Significance stars from p-value
 sig_stars <- function(p) {
   case_when(
     p < 0.001 ~ "***",
@@ -92,13 +91,18 @@ save_plot <- function(p, filepath, width = 12, height = 8) {
   cat("Saved:", filepath, "\n")
 }
 
-# ============================================================
-# Exploratory Functions
-# ============================================================
+# Save text summary to file
+save_summary <- function(text, filepath) {
+  dir.create(dirname(filepath), recursive = TRUE, showWarnings = FALSE)
+  writeLines(text, filepath)
+  cat("Saved:", filepath, "\n")
+}
+
+# ---- Exploratory ----
 
 # Overall summary function for exploration.R
 summarise_ps <- function(ps, name = "dataset",
-                         tax_ranks = c("Phylum", "Class", "Order",  # Make tax ranks constant !!!
+                         tax_ranks = c("Phylum", "Class", "Order",
                                        "Family", "Genus", "Species")) {
   tt <- data.frame(tax_table(ps), stringsAsFactors = FALSE)
   otu <- as(otu_table(ps), "matrix")
@@ -127,9 +131,19 @@ summarise_ps <- function(ps, name = "dataset",
   summary_df
 }
 
-# ============================================================
-# Alpha Diversity Functions
-# ============================================================
+# Print summary to consol
+summarise_ps_print <- function(ps, name, tax_ranks) {
+  cat("===", name, "===\n")
+  cat("  Samples:", nsamples(ps), "| ASVs:", ntaxa(ps), "\n")
+  df <- summarise_ps(ps, name, tax_ranks)
+  for (i in seq_len(nrow(df))) {
+    cat("  ", df$rank[i], ": ", df$unique_taxa[i], " unique, ",
+        df$pct_reads_unassigned[i], "% reads unassigned\n", sep = "")
+  }
+  cat("\n")
+}
+
+# ---- Alpha Diversity ----
 
 # Computes alpha diversity, compares with metadata variables
 compute_alpha <- function(ps, marker_name,
@@ -153,9 +167,7 @@ compute_alpha_all <- function(ps_list,
   bind_rows(imap(ps_list, ~ compute_alpha(.x, .y, metrics, lake_order)))
 }
 
-# ============================================================
-# Beta Diversity Functions
-# ============================================================
+# ---- Beta Diversity ----
 
 # Runs ordination and returns a list with the plot, ordination, and ps
 run_ordination <- function(ps, method = "NMDS", distance = "jaccard",
