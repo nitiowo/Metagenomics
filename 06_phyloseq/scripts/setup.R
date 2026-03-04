@@ -84,7 +84,7 @@ morph_station_ids  <- data.frame(sample_data(ps_morph))$Station_ID
 # ---- Output Directories ----
 out_dirs <- c("exploratory", "alpha", "beta", "composition",
               "overlap", "heatmaps", "differential",
-              "focal_taxon", "trebitz_compare")
+              "geographic", "focal_taxon", "varpart", "trebitz_compare")
 for (d in out_dirs) {
   dir.create(file.path(output_root, d, "figures"),
              recursive = TRUE, showWarnings = FALSE)

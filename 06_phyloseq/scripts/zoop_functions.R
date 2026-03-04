@@ -3,7 +3,7 @@
 
 # ---- Data Prep ----
 
-# Make sure Lake order always remains the same
+# Consistent lake factor ordering
 set_lake_order <- function(ps, lake_order) {
   sd <- data.frame(sample_data(ps))
   sd$Lake <- factor(sd$Lake, levels = lake_order, ordered = TRUE)
@@ -12,7 +12,7 @@ set_lake_order <- function(ps, lake_order) {
   ps
 }
 
-# Agglomerates to a specific tax rank
+# Agglomerate to a taxonomic rank
 agg_rank <- function(ps, rank = "Species") {
   if (rank == "ASV") return(ps)
   tt <- access(ps, "tax_table", errorIfNULL = FALSE)
@@ -27,7 +27,7 @@ agg_rank <- function(ps, rank = "Species") {
   tax_glom(ps, taxrank = rank, NArm = FALSE)
 }
 
-# Converts ASV table to presence/absence data
+# Convert to presence/absence
 to_pa <- function(ps) {
   ot <- as(otu_table(ps), "matrix")
   ot[ot > 0] <- 1
@@ -35,7 +35,7 @@ to_pa <- function(ps) {
   ps
 }
 
-# Specify taxa list to include/exclude, and subset
+# Subset taxa by include/exclude list
 subset_taxa_custom <- function(ps, tsub = NULL) {
   if (is.null(tsub)) return(ps)
   tt <- data.frame(tax_table(ps), stringsAsFactors = FALSE)
@@ -106,6 +106,8 @@ aggregate_to_station <- function(ps) {
            access(ps, "tax_table", errorIfNULL = FALSE))
 }
 
+# ---- Combining Markers ----
+
 # Merge multiple ps objects into one P/A dataset at a given rank
 combine_ps_pa <- function(ps_list, rank = "Species", shared_samples = NULL) {
   ps_prepped <- lapply(ps_list, function(ps) agg_rank(ps, rank) %>% to_pa())
@@ -150,6 +152,8 @@ combine_ps_pa <- function(ps_list, rank = "Species", shared_samples = NULL) {
            sd, tax_table(tax_mat))
 }
 
+# ---- Long Data ----
+
 # Melt a list of ps objects into a single long df for ggplot
 build_long_df <- function(ps_list, rank = "Genus", relative = TRUE,
                           tsub = NULL, lakes = NULL) {
@@ -185,7 +189,7 @@ save_plot <- function(p, filepath, width = 12, height = 8) {
   cat("Saved:", filepath, "\n")
 }
 
-# Save a data frame as CSV and Word - formatted table (editable in Word)
+# Save a data frame as CSV and Word table
 save_stats <- function(df, filepath_base, caption = NULL) {
   dir.create(dirname(filepath_base), recursive = TRUE, showWarnings = FALSE)
 
@@ -256,7 +260,7 @@ summarise_ps_print <- function(ps, name, tax_ranks) {
 
 # ---- Alpha Diversity ----
 
-# Computes alpha diversity, compares with metadata variables
+# Compute alpha diversity for one ps object
 compute_alpha <- function(ps, marker_name,
                           metrics = c("Observed", "InvSimpson"),
                           lake_order = NULL) {
@@ -271,7 +275,7 @@ compute_alpha <- function(ps, marker_name,
   ad
 }
 
-# For many markers
+# Compute alpha for all markers in a list
 compute_alpha_all <- function(ps_list,
                               metrics = c("Observed", "InvSimpson"),
                               lake_order = NULL) {
@@ -470,7 +474,7 @@ load_trebitz <- function(filepath) {
   read.csv(filepath, stringsAsFactors = FALSE)
 }
 
-# Compare marker taxa against Trebitz lists, return unexpected detections
+# Compare detected taxa against Trebitz lists, return unexpected detections
 compare_to_trebitz <- function(ps, trebitz_df, rank = "Species", lake = NULL) {
   ps_agg <- agg_rank(ps, rank) %>% to_pa()
   if (!is.null(lake)) {
@@ -580,4 +584,31 @@ focal_detection_summary <- function(ps_list, focal_rank, focal_name,
     sums <- sample_sums(to_pa(ps_agg))
     tibble(Marker = m, n_taxa = n_taxa, n_samples_with = sum(sums > 0))
   })
+}
+
+# ---- Geographic / Spatial ----
+
+# Filter sample data to stations with valid lat/long
+filter_geo_metadata <- function(ps) {
+  sdf <- data.frame(sample_data(ps))
+  sdf <- sdf %>%
+    filter(!is.na(Latitude) & !is.na(Longitude))
+  sdf
+}
+
+# Mantel test
+run_ibd <- function(ps, dist_method = "jaccard", nperm = 999) {
+  sdf <- filter_geo_metadata(ps)
+  ps_sub <- prune_samples(rownames(sdf), ps)
+  
+  comm_dist <- phyloseq::distance(ps_sub, method = dist_method)
+  
+  coords <- sdf %>% select(Longitude, Latitude) %>% as.matrix()
+  geo_dist <- geosphere::distm(coords, fun = geosphere::distHaversine)
+  geo_dist <- as.dist(geo_dist)
+  
+  mt <- vegan::mantel(comm_dist, geo_dist, method = "spearman",
+                      permutations = nperm)
+  tibble(statistic = mt$statistic, p.value = mt$signif,
+         n_samples = nrow(sdf), method = dist_method)
 }

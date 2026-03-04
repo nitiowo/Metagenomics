@@ -11,10 +11,9 @@ use_markers <- NULL
 use_lakes   <- NULL
 use_metrics <- c("Observed", "InvSimpson")
 
-# ---- Filter ----
+# ---- Filter and Compute ----
 ps_filt <- filter_ps_list(use_ps_list, use_markers, use_lakes)
 
-# ---- Compute ----
 alpha_all <- compute_alpha_all(ps_filt, use_metrics, lake_order)
 
 alpha_long <- alpha_all %>%
@@ -94,7 +93,7 @@ p_mk <- ggplot(alpha_long, aes(x = Marker, y = Value, fill = Marker)) +
 save_plot(p_mk, file.path(outdir, "figures",
                            "alpha_boxplot_between_markers.pdf"))
 
-# ---- Boxplot: Lake by Marker ----
+# Between lakes per marker
 p_lk <- ggplot(alpha_long, aes(x = Lake, y = Value, fill = Lake)) +
   geom_boxplot(outlier.shape = NA, alpha = 0.7) +
   geom_jitter(width = 0.2, alpha = 0.4, size = 1) +
