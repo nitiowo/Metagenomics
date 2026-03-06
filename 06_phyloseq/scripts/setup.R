@@ -1,5 +1,5 @@
 # setup.R
-# Load all data, build phyloseq objects, define palettes
+# Load data, build phyloseq objects, define palettes, create combined datasets
 
 library(phyloseq)
 library(tidyverse)

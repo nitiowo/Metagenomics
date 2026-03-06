@@ -1,5 +1,5 @@
 # composition.R
-# Stacked barplots of relative abundance
+# Stacked barplots of relative abundance across markers and ranks
 
 source("setup.R")
 
@@ -25,7 +25,7 @@ for (rank in use_ranks) {
     df <- psmelt(ps_rel)
     df$Lake <- factor(df$Lake, levels = lake_order, ordered = TRUE)
 
-    # Top N taxa, lump everything else as "Other"
+    # Top N taxa, lump rest as Other
     top_taxa <- df %>%
       group_by(.data[[rank]]) %>%
       summarise(total = sum(Abundance, na.rm = TRUE), .groups = "drop") %>%

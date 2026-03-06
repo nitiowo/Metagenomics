@@ -82,7 +82,6 @@ rename_samples_to_station <- function(ps) {
 }
 
 # Merge replicate samples at the same station into station-level P/A
-# To compare molecular data to morph data
 aggregate_to_station <- function(ps) {
   sd <- data.frame(sample_data(ps))
   stations <- unique(sample_names(ps))
@@ -611,4 +610,35 @@ run_ibd <- function(ps, dist_method = "jaccard", nperm = 999) {
                       permutations = nperm)
   tibble(statistic = mt$statistic, p.value = mt$signif,
          n_samples = nrow(sdf), method = dist_method)
+}
+
+# ---- Indicator Species / Tree ----
+
+# Indicator species analysis (indicspecies multipatt)
+run_indicator <- function(ps, group_var = "Lake", func = "IndVal.g",
+                          nperm = 999) {
+  otu <- as.data.frame(otu_table(ps))
+  if (!taxa_are_rows(ps)) otu <- t(otu) %>% as.data.frame()
+  otu <- t(otu)
+  
+  sdf <- data.frame(sample_data(ps))
+  groups <- sdf[[group_var]]
+  
+  mp <- indicspecies::multipatt(otu, groups,
+                                func = func, control = how(nperm = nperm))
+  
+  sig <- mp$sign %>%
+    filter(p.value < 0.05) %>%
+    rownames_to_column("Taxon") %>%
+    arrange(p.value)
+  sig
+}
+
+# Build neighbor-joining tree from refseq
+build_nj_tree <- function(ps) {
+  seqs <- Biostrings::DNAStringSet(taxa_names(ps))
+  alignment <- DECIPHER::AlignSeqs(seqs, anchor = NA, verbose = FALSE)
+  dist_mat <- DECIPHER::DistanceMatrix(alignment, verbose = FALSE)
+  tree <- ape::nj(dist_mat)
+  tree
 }

@@ -1,5 +1,5 @@
 # beta.R
-# Beta diversity: ordination and PERMANOVA
+# Beta diversity: ordinations, PERMANOVA, betadisper, between-marker, combined
 
 source("setup.R")
 
@@ -14,7 +14,7 @@ use_lakes   <- NULL
 ps_filt <- filter_ps_list(use_ps_list, use_markers, use_lakes)
 marker_names <- names(ps_filt)
 
-# ---- Within-Marker Ordinations ----
+# ---- Per-Marker Ordinations + Stats ----
 for (mk in marker_names) {
   ps <- ps_filt[[mk]]
 
@@ -49,7 +49,7 @@ for (mk in marker_names) {
   }
 }
 
-# ---- Between-Marker Distance Jaccard PcoA ----
+# ---- Between-Marker Distance (Jaccard PcoA) ----
 ps_mk <- build_marker_ps(ps_filt, tax_level = "Genus")
 dist_mk <- phyloseq::distance(ps_mk, method = "jaccard")
 ord_mk <- ordinate(ps_mk, "PCoA", distance = dist_mk)

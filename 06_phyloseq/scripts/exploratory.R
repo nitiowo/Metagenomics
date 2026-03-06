@@ -1,5 +1,5 @@
 # exploratory.R
-# Dataset summaries
+# Dataset summaries: counts, unique taxa, % unassigned at each rank
 
 source("setup.R")
 
@@ -14,7 +14,7 @@ summary_df <- summary_df %>%
   select(dataset, samples, total_asvs, rank, unique_taxa,
          unassigned_asvs, pct_reads_unassigned)
 
-# ---- Print to console and save----
+# ---- Print to console and save ----
 for (nm in names(datasets)) {
   summarise_ps_print(datasets[[nm]], nm, tax_ranks)
 }
