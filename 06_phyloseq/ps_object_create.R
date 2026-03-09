@@ -4,6 +4,37 @@ library(phyloseq)
 library(dplyr)
 library(Biostrings)
 
+# Rename taxa to stable ASV IDs and write map/fasta outputs
+rename_asvs_from_empty_refseq <- function(ps, save_map = NULL, save_fasta = NULL,
+                                          prefix = "ASV") {
+  old_ids <- taxa_names(ps)
+  n_taxa <- length(old_ids)
+  new_ids <- sprintf("%s_%06d", prefix, seq_len(n_taxa))
+
+  map_df <- data.frame(
+    old_id = old_ids,
+    new_id = new_ids,
+    stringsAsFactors = FALSE
+  )
+
+  taxa_names(ps) <- new_ids
+
+  if (!is.null(save_map)) {
+    write.csv(map_df, save_map, row.names = FALSE)
+  }
+
+  if (!is.null(save_fasta)) {
+    seq_guess <- grep("^[ACGTNacgtn-]+$", old_ids)
+    if (length(seq_guess) == n_taxa) {
+      seqs <- DNAStringSet(old_ids)
+      names(seqs) <- new_ids
+      writeXStringSet(seqs, save_fasta)
+    }
+  }
+
+  list(ps = ps, map = map_df)
+}
+
 setwd("/Volumes/Samsung_1TB/Zooplankton/Metagenomics/")
 dir.create("06_phyloseq/setup_output")
 outdir <- ("06_phyloseq/setup_output/")

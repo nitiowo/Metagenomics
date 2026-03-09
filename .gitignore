@@ -6,6 +6,9 @@
 **/*fa
 **/*.fasta
 
+# Other raw data #
+**/*data
+
 # R files #
 ###########
 **/*.Rds
