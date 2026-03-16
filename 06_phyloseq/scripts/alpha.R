@@ -1,5 +1,5 @@
 # alpha.R
-# Alpha diversity: compute, compare, and plot
+# Alpha diversity: compute, compare between markers and lakes, concordance
 
 source("setup.R")
 
@@ -10,9 +10,11 @@ use_ps_list <- ps_all_methods
 use_markers <- NULL
 use_lakes   <- NULL
 use_metrics <- c("Observed", "InvSimpson")
+use_rank    <- "ASV"
 
 # ---- Filter and Compute ----
 ps_filt <- filter_ps_list(use_ps_list, use_markers, use_lakes)
+if (use_rank != "ASV") ps_filt <- lapply(ps_filt, agg_rank, use_rank)
 
 alpha_all <- compute_alpha_all(ps_filt, use_metrics, lake_order)
 
@@ -44,12 +46,10 @@ save_stats(pw_mk, file.path(outdir, "stats", "alpha_pairwise_markers"),
 kw_lk <- run_kruskal(alpha_long, "Lake", group_by_vars = "Marker")
 pw_lk <- run_pairwise_wilcox(alpha_long, "Lake", group_by_vars = "Marker")
 
-save_stats(kw_lk, file.path(outdir, "stats",
-                             "alpha_kruskal_lakes_per_marker"),
-           caption = "Kruskal-Wallis: alpha between lakes (per marker)")
+save_stats(kw_lk, file.path(outdir, "stats", "alpha_kruskal_lakes_per_marker"),
+           caption = "Kruskal-Wallis: alpha diversity between lakes (per marker)")
 save_stats(pw_lk %>% filter(p.adj < 0.05),
-           file.path(outdir, "stats",
-                     "alpha_pairwise_lakes_significant"),
+           file.path(outdir, "stats", "alpha_pairwise_lakes_significant"),
            caption = "Significant pairwise lake comparisons")
 
 # ---- Spearman between marker comparison ----
@@ -65,7 +65,7 @@ cor_table <- alpha_wide %>%
   group_by(Metric) %>%
   reframe({
     map_dfr(marker_pairs, function(pr) {
-      vals <- cur_data() %>% select(all_of(pr)) %>% drop_na()
+      vals <- pick(all_of(pr)) %>% drop_na()
       if (nrow(vals) < 5) return(NULL)
       ct <- cor.test(vals[[1]], vals[[2]], method = "spearman")
       tibble(Marker_A = pr[1], Marker_B = pr[2],
@@ -74,8 +74,7 @@ cor_table <- alpha_wide %>%
   }) %>%
   mutate(sig = sig_stars(p))
 
-save_stats(cor_table,
-           file.path(outdir, "stats", "alpha_concordance_spearman"),
+save_stats(cor_table, file.path(outdir, "stats", "alpha_concordance_spearman"),
            caption = "Spearman correlations of site-level alpha diversity")
 
 # ---- Plots ----
@@ -86,25 +85,29 @@ p_mk <- ggplot(alpha_long, aes(x = Marker, y = Value, fill = Marker)) +
   geom_jitter(width = 0.2, alpha = 0.4, size = 1) +
   facet_wrap(~ Metric, scales = "free_y") +
   scale_fill_manual(values = marker_colors) +
-  theme_minimal(base_size = 10) +
+  theme_minimal(base_size = plot_base_size) +
   labs(title = "Alpha diversity - between markers",
+       subtitle = paste("Metrics:", paste(use_metrics, collapse = ", "),
+                       "| Rank:", use_rank),
        y = "Diversity value") +
   theme(legend.position = "bottom")
 save_plot(p_mk, file.path(outdir, "figures",
-                           "alpha_boxplot_between_markers.pdf"))
+          paste0("alpha_boxplot_between-markers_", tolower(use_rank), ".pdf")))
 
-# Between lakes per marker
+# Between lakes, faceted by metric and marker
 p_lk <- ggplot(alpha_long, aes(x = Lake, y = Value, fill = Lake)) +
   geom_boxplot(outlier.shape = NA, alpha = 0.7) +
   geom_jitter(width = 0.2, alpha = 0.4, size = 1) +
   facet_grid(Metric ~ Marker, scales = "free_y") +
   scale_fill_manual(values = lake_colors) +
-  theme_minimal(base_size = 10) +
+  theme_minimal(base_size = plot_base_size) +
   labs(title = "Alpha diversity - between lakes (per marker)",
+       subtitle = paste("Metrics:", paste(use_metrics, collapse = ", "),
+                       "| Rank:", use_rank),
        y = "Diversity value") +
   theme(legend.position = "bottom")
 save_plot(p_lk, file.path(outdir, "figures",
-                           "alpha_boxplot_lake_by_marker.pdf"),
+          paste0("alpha_boxplot_lake-by-marker_", tolower(use_rank), ".pdf")),
           width = 16, height = 10)
 
 # Concordance scatterplots
@@ -116,33 +119,79 @@ scatter_plots <- purrr::compact(map(marker_pairs, function(pr) {
     geom_point(size = 2.5) +
     geom_smooth(method = "lm", se = TRUE, color = "black", linetype = 2) +
     scale_color_manual(values = lake_colors) +
-    theme_minimal(base_size = 10) +
+    theme_minimal(base_size = plot_base_size) +
     labs(title = paste(pr[1], "vs", pr[2]))
 }))
 
 if (length(scatter_plots) > 0) {
   p_conc <- wrap_plots(scatter_plots, ncol = 3) +
     plot_annotation(title = "Site-level richness concordance (Observed)")
-  save_plot(p_conc, file.path(outdir, "figures",
-                               "alpha_concordance_scatter.pdf"),
+  save_plot(p_conc, file.path(outdir, "figures", "alpha_concordance_scatter.pdf"),
             width = 16, height = 10)
 }
 
-# ---- Combined Markers Alpha ----
-alpha_comb <- compute_alpha(ps_markers_combined, "Combined",
-                             use_metrics, lake_order)
+# Combined markers alpha
+alpha_comb <- compute_alpha(ps_markers_combined, "Combined", use_metrics, lake_order)
 alpha_comb_long <- alpha_comb %>%
-  pivot_longer(cols = all_of(use_metrics),
-               names_to = "Metric", values_to = "Value")
+  pivot_longer(cols = all_of(use_metrics), names_to = "Metric", values_to = "Value")
 
 p_comb <- ggplot(alpha_comb_long, aes(x = Lake, y = Value, fill = Lake)) +
   geom_boxplot(outlier.shape = NA, alpha = 0.7) +
   geom_jitter(width = 0.2, alpha = 0.5) +
   facet_wrap(~ Metric, scales = "free_y") +
   scale_fill_manual(values = lake_colors) +
-  theme_minimal(base_size = 10) +
-  labs(title = "Alpha diversity - combined markers (P/A)",
-       y = "Diversity value")
-save_plot(p_comb, file.path(outdir, "figures",
-                             "alpha_boxplot_combined_markers.pdf"),
+  theme_minimal(base_size = plot_base_size) +
+  labs(title = "Alpha diversity - combined markers (P/A)", y = "Diversity value")
+save_plot(p_comb, file.path(outdir, "figures", "alpha_boxplot_combined_markers.pdf"),
           width = 10, height = 6)
+
+# ---- Depth ----
+
+# Check if Site_Depth is available in sample data
+depth_col <- "Site_Depth"
+has_depth <- any(sapply(ps_filt, function(ps) {
+  depth_col %in% colnames(data.frame(sample_data(ps)))
+}))
+
+if (has_depth) {
+  depth_df <- alpha_all %>%
+    filter(!is.na(.data[[depth_col]])) %>%
+    mutate(Site_Depth = as.numeric(.data[[depth_col]]))
+
+  if (nrow(depth_df) > 5) {
+    depth_long <- depth_df %>%
+      pivot_longer(cols = all_of(use_metrics),
+                   names_to = "Metric", values_to = "Value")
+
+    # Scatter: richness vs depth, per marker
+    p_depth <- ggplot(depth_long, aes(x = Site_Depth, y = Value, color = Lake)) +
+      geom_point(size = 2, alpha = 0.7) +
+      geom_smooth(method = "lm", se = TRUE, color = "black", linetype = 2) +
+      facet_grid(Metric ~ Marker, scales = "free_y") +
+      scale_color_manual(values = lake_colors) +
+      theme_minimal(base_size = plot_base_size) +
+      labs(title = "Alpha diversity vs site depth",
+           x = "Site depth (m)", y = "Diversity value")
+    save_plot(p_depth,
+              file.path(outdir, "figures", "alpha_vs_site-depth_by-marker.pdf"),
+              width = 16, height = 10)
+
+    # Correlation table: Spearman rho per marker x metric
+    depth_cor <- depth_long %>%
+      group_by(Marker, Metric) %>%
+      summarise(
+        n = n(),
+        rho = tryCatch(cor.test(Site_Depth, Value, method = "spearman")$estimate,
+                       error = function(e) NA_real_),
+        p = tryCatch(cor.test(Site_Depth, Value, method = "spearman")$p.value,
+                     error = function(e) NA_real_),
+        .groups = "drop"
+      ) %>% mutate(sig = sig_stars(p))
+
+    save_stats(depth_cor,
+               file.path(outdir, "stats", "alpha_vs_depth_spearman"),
+               caption = "Spearman correlation: alpha diversity vs site depth")
+  }
+} else {
+  cat("No site depth \n")
+}

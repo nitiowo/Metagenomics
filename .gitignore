@@ -16,7 +16,7 @@
 **/*.RDS
 **/*Rhistory
 **/*RData
-.Rproj*
+*.Rproj*
 
 # Databases #
 #############
@@ -56,3 +56,4 @@
 **/*.test
 **/*old*
 **/*checklist*
+**/*.lintr*

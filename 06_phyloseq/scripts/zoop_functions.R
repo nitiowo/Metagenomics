@@ -51,6 +51,11 @@ subset_taxa_custom <- function(ps, tsub = NULL) {
   prune_samples(sample_sums(ps) > 0, ps)
 }
 
+# Agglomerate and subset in one step
+prepare_ps <- function(ps, rank = "Species", tsub = NULL) {
+  ps %>% agg_rank(rank) %>% subset_taxa_custom(tsub)
+}
+
 # Filters a  list of ps objects by specified variables
 filter_ps_list <- function(ps_list, markers = NULL, lakes = NULL,
                            mesh = NULL, tsub = NULL) {
@@ -388,6 +393,22 @@ run_betadisper <- function(ps, group_var = "Lake",
 }
 
 # ---- Differential Abundance ----
+
+# ANCOM-BC2
+run_ancombc <- function(ps, group_var = "Lake", rank = "Genus",
+                        prev_cut = 0.10) {
+  ps_agg <- agg_rank(ps, rank)
+  prev <- apply(as(otu_table(ps_agg), "matrix"),
+                if (taxa_are_rows(ps_agg)) 1 else 2,
+                function(x) mean(x > 0))
+  ps_filt <- prune_taxa(names(prev[prev >= prev_cut]), ps_agg)
+  if (ntaxa(ps_filt) < 3) { cat("too few taxa after filtering\n"); return(NULL) }
+
+  ANCOMBC::ancombc2(data = ps_filt, fix_formula = group_var,
+                    p_adj_method = "BH", prv_cut = 0,
+                    group = group_var, struc_zero = TRUE,
+                    neg_lb = TRUE, verbose = FALSE)
+}
 
 # SIMPER analysis
 run_simper_analysis <- function(ps, group_var = "Lake",
